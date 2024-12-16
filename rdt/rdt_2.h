@@ -13,6 +13,7 @@
 #define FALSE 0
 #define SUCCESS 0
 
-int biterror_inject = FALSE;
+int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst);
+int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src);
 
 #endif

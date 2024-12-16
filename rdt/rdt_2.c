@@ -12,6 +12,8 @@ struct pkt {
 };
 typedef struct pkt pkt;
 
+int biterror_inject = FALSE;
+
 unsigned short checksum(unsigned short *buf, int nbytes){
 	register long sum;
 	sum = 0;
@@ -43,23 +45,49 @@ int make_pkt(pkt *p, void *buf, int buf_len) {
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
 	pkt p;
 	int ns;
-	if (make_pkt(&p, buf, buf_len) < 0)
-		return ERROR;
-	if (biterror_inject) {
-		memset(p.msg, 0, MAX_MSG_LEN);
+
+	pkt ack_pkt;
+	int nr;
+	int ack_len	= sizeof(struct sockaddr_in);
+	
+	int retries = 0;
+	while (retries < 3) {
+		memset(&p, 0, sizeof(hdr));
+
+		if (make_pkt(&p, buf, buf_len) < 0)
+			return ERROR;
+		if (biterror_inject) {
+			memset(p.msg, 0, MAX_MSG_LEN);
+		}
+
+		// Enviando o pacote; retorna o número de bytes enviados. Se -1, erro no envio.
+		ns = sendto(sockfd, &p, p.h.pkt_size, 0,
+				(struct sockaddr *)dst, sizeof(struct sockaddr_in));
+		if (ns < 0) {
+			perror("sendto():");
+			return ERROR;
+		}
+
+		// recvfrom ACK ou NAK
+		nr = recvfrom(sockfd, &ack_pkt, sizeof(pkt), 0, (struct sockaddr*)dst,
+			(socklen_t *)&ack_len);
+		if (nr < 0) {
+			perror("rdt_send: recvfrom():");
+			return ERROR;
+		}
+
+		
+		if (!strncmp((char *)ack_pkt.msg, "ACK", 3)) {
+			return ns;
+		} else if (!strncmp((char *)ack_pkt.msg, "NAK", 3)) {
+			printf("rdt_send(): NAK recebido. Reenviando o pacote.\n");
+		}
+
+		retries++;
 	}
 
-	// Enviando o pacote; retorna o número de bytes enviados. Se -1, erro no envio.
-	ns = sendto(sockfd, &p, p.h.pkt_size, 0,
-			(struct sockaddr *)dst, sizeof(struct sockaddr_in));
-	if (ns < 0) {
-		perror("sendto():");
-		return ERROR;
-	}
-
-	// recvfrom ACK ou NAK
-
-	return ns;
+	printf("rdt_send(): falha ao enviar o pacote depois de 3 vezees.\n");
+	return ERROR;
 }
 
 // Retorna TRUE (1) se o checksum do pacote estiver corrompido. Senão, FALSE (0).
@@ -92,7 +120,25 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 	if (iscorrupted(p)) {
 		printf("checksum: pacote corrompido. \n");
 		
-		// Enviar NAK
+		// Enviando NAK
+		pkt nak_pkt;
+		if (make_pkt(&nak_pkt, "NAK", 3) < 0) {
+			printf("rdt_rcv(): falha ao criar o pacote NAK.\n");
+		}
+
+		int nak_retrives = 0;
+		while (nak_retrives < 3) {
+			nr = sendto(sockfd, &nak_pkt, nak_pkt.h.pkt_size, 0,
+				(struct sockaddr *)src, sizeof(struct sockaddr_in));
+			if (nr > 0)
+				break;
+			printf("rdt_rcv(): falha ao enviar o pacote NAK. Retransmitido (%d/3)\n", ++nak_retrives);
+		}
+
+		if (nr < 0) {
+			printf("rdt_rcv(): falha ao enviar o pacote NAK depois de 3 vezees.\n");
+			return ERROR;
+		}
 
 		return ERROR;
 	}
@@ -110,7 +156,25 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 	// Caso o tamanho do buffer seja suficiente, copia a mensagem para o buffer.
 	memcpy(buf, p.msg, msg_size);
 
-	// Enviar ACK
+	// Enviando ACK
+	pkt ack_pkt;
+	if (make_pkt(&ack_pkt, "ACK", 3) < 0) {
+		printf("rdt_rcv(): falha ao criar o pacote ACK.\n");
+	}
+
+	int ack_retrives = 0;
+	while (ack_retrives < 3) {
+		nr = sendto(sockfd, &ack_pkt, ack_pkt.h.pkt_size, 0,
+			(struct sockaddr *)src, sizeof(struct sockaddr_in));
+		if (nr > 0)
+			break;
+		printf("rdt_rcv(): falha ao enviar o pacote ACK. Retransmitido (%d/3)\n", ++ack_retrives);
+	}
+
+	if (nr < 0) {
+		printf("rdt_rcv(): falha ao enviar o pacote ACK depois de 3 vezees.\n");
+		return ERROR;
+	}
 
 	return p.h.pkt_size - sizeof(hdr);
 }
