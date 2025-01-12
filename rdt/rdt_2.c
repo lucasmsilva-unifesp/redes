@@ -1,18 +1,12 @@
 #include "rdt_2.h"
 
-struct hdr {
-	unsigned short pkt_size;
-	unsigned short csum;
-};
-typedef struct hdr hdr;
-
-struct pkt {
-	hdr h;
-	unsigned char msg[MAX_MSG_LEN];
-};
-typedef struct pkt pkt;
-
 int biterror_inject = FALSE;
+
+#define PKT_ACK 0
+#define PKT_DATA 1
+
+hseq_t _snd_seqnum = 1;
+hseq_t _rcv_seqnum = 1;
 
 unsigned short checksum(unsigned short *buf, int nbytes){
 	register long sum;
@@ -28,153 +22,126 @@ unsigned short checksum(unsigned short *buf, int nbytes){
 	return (unsigned short) ~sum;
 }
 
-int make_pkt(pkt *p, void *buf, int buf_len) {
-	if (buf_len > MAX_MSG_LEN) {
-		printf("make_pkt: tamanho da msg (%d) maior que limite (%d).\n",
-		buf_len, MAX_MSG_LEN);
-		return ERROR;
-	}
-	p->h.pkt_size = sizeof(hdr) + buf_len;
-	p->h.csum = 0;
-	memset(p->msg, 0, MAX_MSG_LEN);
-	memcpy(p->msg, buf, buf_len);
-	p->h.csum = checksum((unsigned short *)p, p->h.pkt_size);
-	return SUCCESS;
-}
-
-int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
-	pkt p;
-	int ns;
-
-	pkt ack_pkt;
-	int nr;
-	int ack_len	= sizeof(struct sockaddr_in);
-	
-	int retries = 0;
-	while (retries < 3) {
-		memset(&p, 0, sizeof(hdr));
-
-		if (make_pkt(&p, buf, buf_len) < 0)
-			return ERROR;
-		if (biterror_inject) {
-			memset(p.msg, 0, MAX_MSG_LEN);
-		}
-
-		// Enviando o pacote; retorna o número de bytes enviados. Se -1, erro no envio.
-		ns = sendto(sockfd, &p, p.h.pkt_size, 0,
-				(struct sockaddr *)dst, sizeof(struct sockaddr_in));
-		if (ns < 0) {
-			perror("sendto():");
-			return ERROR;
-		}
-
-		// recvfrom ACK ou NAK
-		nr = recvfrom(sockfd, &ack_pkt, sizeof(pkt), 0, (struct sockaddr*)dst,
-			(socklen_t *)&ack_len);
-		if (nr < 0) {
-			perror("rdt_send: recvfrom():");
-			return ERROR;
-		}
-
-		
-		if (!strncmp((char *)ack_pkt.msg, "ACK", 3)) {
-			return ns;
-		} else if (!strncmp((char *)ack_pkt.msg, "NAK", 3)) {
-			printf("rdt_send(): NAK recebido. Reenviando o pacote.\n");
-		}
-
-		retries++;
-	}
-
-	printf("rdt_send(): falha ao enviar o pacote depois de 3 vezees.\n");
-	return ERROR;
-}
-
-// Retorna TRUE (1) se o checksum do pacote estiver corrompido. Senão, FALSE (0).
-int iscorrupted(pkt pr){
-	pkt pl = pr;
+int iscorrupted(pkt *pr){
+	pkt pl = *pr;
 	pl.h.csum = 0;
 	unsigned short csuml;
 	csuml = checksum((void *)&pl, pl.h.pkt_size);
-	if (csuml != pr.h.csum){
+	if (csuml != pr->h.csum){
 		return TRUE;
 	}
 	return FALSE;
 }
 
+int make_pkt(pkt *p, htype_t type, hseq_t seqnum, void *msg, int msg_len) {
+	if (msg_len > MAX_MSG_LEN) {
+		printf("make_pkt: tamanho da msg (%d) maior que limite (%d).\n",
+		msg_len, MAX_MSG_LEN);
+		return ERROR;
+	}
+	p->h.pkt_size = sizeof(hdr);
+	p->h.csum = 0;
+	p->h.pkt_type = type;
+	p->h.pkt_seq = seqnum;
+	if (msg_len > 0) {
+		p->h.pkt_size += msg_len;
+		memset(p->msg, 0, MAX_MSG_LEN);
+		memcpy(p->msg, msg, msg_len);
+	}
+	p->h.csum = checksum((unsigned short *)p, p->h.pkt_size);
+	return SUCCESS;
+}
+
+int has_ackseq(pkt *p, hseq_t seqnum) {
+	if (p->h.pkt_type != PKT_ACK || p->h.pkt_seq != seqnum)
+		return FALSE;
+	return TRUE;
+}
+
+int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dst) {
+	pkt p, ack;
+	struct sockaddr_in dst_ack;
+	int ns, nr, addrlen;
+	if (make_pkt(&p, PKT_DATA, _snd_seqnum, buf, buf_len) < 0)
+		return ERROR;
+	if (biterror_inject) {
+		memset(p.msg, 0, MAX_MSG_LEN);
+	}
+
+resend:
+	ns = sendto(sockfd, &p, p.h.pkt_size, 0,
+			(struct sockaddr *)dst, sizeof(struct sockaddr_in));
+	if (ns < 0) {
+		perror("rdt_send: sendto(PKT_DATA):");
+		return ERROR;
+	}
+	addrlen = sizeof(struct sockaddr_in);
+	nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dst_ack,
+		(socklen_t *)&addrlen);
+	if (nr < 0) {
+		perror("rdt_send: recvfrom(PKT_ACK)");
+		return ERROR;
+	}
+	if (iscorrupted(&ack) || !has_ackseq(&ack, _snd_seqnum)){
+		printf("rdt_send: iscorrupted || !has_ackseq");
+		goto resend;
+	}
+	_snd_seqnum++;
+	return buf_len;
+}
+
+int has_dataseqnum(pkt *p, hseq_t seqnum) {
+	if (p->h.pkt_seq != seqnum || p->h.pkt_type != PKT_DATA)
+		return FALSE;
+	return TRUE;
+}
+
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
-	pkt p;
-	int nr;
-	int addrlen = sizeof(struct sockaddr_in);
+	pkt p, ack;
+	int nr, ns;
+	int addrlen;
 	memset(&p, 0, sizeof(hdr));
 
-	// Recebendo o pacote; retorna o número de bytes recebidos. Se -1, erro no recebimento.
+        if (make_pkt(&ack, PKT_ACK, _rcv_seqnum - 1, NULL, 0) < 0)
+                return ERROR;
+
+rerecv:
+	addrlen = sizeof(struct sockaddr_in);
 	nr = recvfrom(sockfd, &p, sizeof(pkt), 0, (struct sockaddr*)src,
 		(socklen_t *)&addrlen);
 	if (nr < 0) {
 		perror("recvfrom():");
 		return ERROR;
 	}
-
-	// Verificando se o pacote está corrompido. Se estiver, deve-se enviar NAK.
-	if (iscorrupted(p)) {
-		printf("checksum: pacote corrompido. \n");
-		
-		// Enviando NAK
-		pkt nak_pkt;
-		if (make_pkt(&nak_pkt, "NAK", 3) < 0) {
-			printf("rdt_rcv(): falha ao criar o pacote NAK.\n");
-		}
-
-		int nak_retrives = 0;
-		while (nak_retrives < 3) {
-			nr = sendto(sockfd, &nak_pkt, nak_pkt.h.pkt_size, 0,
-				(struct sockaddr *)src, sizeof(struct sockaddr_in));
-			if (nr > 0)
-				break;
-			printf("rdt_rcv(): falha ao enviar o pacote NAK. Retransmitido (%d/3)\n", ++nak_retrives);
-		}
-
-		if (nr < 0) {
-			printf("rdt_rcv(): falha ao enviar o pacote NAK depois de 3 vezees.\n");
+	if (iscorrupted(&p) || !has_dataseqnum(&p, _rcv_seqnum)) {
+		printf("rdt_recv: iscorrupted || has_dataseqnum \n");
+		// enviar ultimo ACK (_rcv_seqnum - 1)
+		ns = sendto(sockfd, &ack, ack.h.pkt_size, 0,
+			(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in));
+		if (ns < 0) {
+			perror("rdt_rcv: sendto(PKT_ACK - 1)");
 			return ERROR;
 		}
-
-		return ERROR;
+		goto rerecv;
 	}
-
-	// Caso o pacote não foi corrompido (checksum é igual ao calculado pelo remetente).
 	int msg_size = p.h.pkt_size - sizeof(hdr);
-
-	// Verificando se o tamanho do buffer é suficiente para a mensagem, pois o buffer possui um limite no tamanho da mensagem.
 	if (msg_size > buf_len) {
 		printf("rdt_rcv(): tamanho insuficiente de buf (%d) para payload (%d).\n", 
 			buf_len, msg_size);
 		return ERROR;
 	}
-
-	// Caso o tamanho do buffer seja suficiente, copia a mensagem para o buffer.
 	memcpy(buf, p.msg, msg_size);
+	// enviar ACK
 
-	// Enviando ACK
-	pkt ack_pkt;
-	if (make_pkt(&ack_pkt, "ACK", 3) < 0) {
-		printf("rdt_rcv(): falha ao criar o pacote ACK.\n");
-	}
+	if (make_pkt(&ack, PKT_ACK, p.h.pkt_seq, NULL, 0) < 0)
+                return ERROR;
 
-	int ack_retrives = 0;
-	while (ack_retrives < 3) {
-		nr = sendto(sockfd, &ack_pkt, ack_pkt.h.pkt_size, 0,
-			(struct sockaddr *)src, sizeof(struct sockaddr_in));
-		if (nr > 0)
-			break;
-		printf("rdt_rcv(): falha ao enviar o pacote ACK. Retransmitido (%d/3)\n", ++ack_retrives);
-	}
-
-	if (nr < 0) {
-		printf("rdt_rcv(): falha ao enviar o pacote ACK depois de 3 vezees.\n");
-		return ERROR;
-	}
-
+	ns = sendto(sockfd, &ack, ack.h.pkt_size, 0,
+                (struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in));
+	if (ns < 0) {
+                perror("rdt_rcv: sendto(PKT_ACK)");
+                return ERROR;
+        }
+	_rcv_seqnum++;
 	return p.h.pkt_size - sizeof(hdr);
 }
