@@ -36,15 +36,16 @@ void client(const char *server_ip, int port) {
         printf("Client: Enter a message to send (or 'exit' to quit): ");
         fgets(buffer, MAX_MSG_LEN, stdin);
 
-        // Remove newline character
-        buffer[strcspn(buffer, "\n")] = 0;
-
-        if (!strcmp(buffer, "exit")) {
+        if (!strcmp(buffer, "exit\n")) {
             printf("Client: Exiting...\n");
             break;
         }
 
-        if (rdt_send(sockfd, buffer, strlen(buffer), &server_addr) < 0) {
+        // Remove newline character
+        buffer[strcspn(buffer, "\n")] = 32;
+
+
+        if (strlen(buffer) > 1 && rdt_send(sockfd, buffer, strlen(buffer), &server_addr) < 0) {
             perror("Client: rdt_send() failed");
             continue;
         }
