@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
+#include <errno.h>
 
 #define MAX_MSG_LEN 1000
 #define ERROR -1
@@ -17,12 +19,14 @@ typedef uint16_t hsize_t;
 typedef uint16_t hcsum_t;
 typedef uint16_t hseq_t;
 typedef uint8_t  htype_t;
+typedef time_t   htime_t;
 
 struct hdr {
 	hseq_t  pkt_seq;
 	hsize_t pkt_size;
 	htype_t pkt_type;
 	hcsum_t csum;
+	htime_t pkt_time;
 };
 
 typedef struct hdr hdr;
