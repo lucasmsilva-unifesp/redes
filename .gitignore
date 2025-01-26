@@ -56,3 +56,6 @@ dkms.conf
 
 #Studies and other
 .slides
+
+client
+server

@@ -6,23 +6,21 @@
 
 void server(int port) {
     int sockfd;
-    struct sockaddr_in saddr, client_addr;
+    struct sockaddr_in sock_addr, client_addr;
 
     char buffer[MAX_MSG_LEN];
     int msg_len;
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-        perror("server: socket() ");
-        return;
+        handle_error("server: socket() ");
     }
 
-    saddr.sin_family = AF_INET;
-    saddr.sin_addr.s_addr = INADDR_ANY;
-    saddr.sin_port = htons(port);
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_addr.s_addr = INADDR_ANY;
+    sock_addr.sin_port = htons(port);
 
-    if (bind(sockfd, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
-        perror("server: bind() ");
-        return;       
+    if (bind(sockfd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
+        handle_error("server: bind() ");      
     }
 
     printf("Server is running and waiting for messages on port %d...\n", port);

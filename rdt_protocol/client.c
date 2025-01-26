@@ -14,8 +14,7 @@ void client(const char *server_ip, int port) {
     char buffer[MAX_MSG_LEN];
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-        perror("Client: socket creation failed");
-        return;
+        handle_error("Client: cannot create socket");
     }
 
     memset(&server_addr, 0, sizeof(server_addr));
@@ -23,9 +22,8 @@ void client(const char *server_ip, int port) {
     server_addr.sin_addr.s_addr = inet_addr(server_ip);
     server_addr.sin_port = htons(port);
     if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
-        perror("Client: Invalid server IP address");
+        handle_error("Client: Invalid server IP address");
         close(sockfd);
-        return;
     }
 
     printf("Client is ready. Sending messages to server %s:%d...\n", server_ip, port);
@@ -46,7 +44,7 @@ void client(const char *server_ip, int port) {
 
 
         if (strlen(buffer) > 1 && rdt_send(sockfd, buffer, strlen(buffer), &server_addr) < 0) {
-            perror("Client: rdt_send() failed");
+            handle_error("Client: rdt_send() failed");
             continue;
         }
     }

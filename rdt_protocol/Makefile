@@ -13,8 +13,8 @@ SERVER = server
 CLIENT = client
 
 # Valores padrão
-DEFAULT_PORT = 8080
-DEFAULT_IP = 127.0.0.1
+PORT ?= 8080
+IP ?= 127.0.0.1
 
 # Regras de compilação
 all: $(SERVER) $(CLIENT)
@@ -27,10 +27,10 @@ $(CLIENT): $(CLIENT_SRC) $(RDT_SRC)
 
 # Execução
 run-server: $(SERVER)
-	./$(SERVER) $(DEFAULT_PORT)
+	./$(SERVER) $(PORT)
 
 run-client: $(CLIENT)
-	./$(CLIENT) $(DEFAULT_IP) $(DEFAULT_PORT)
+	./$(CLIENT) $(IP) $(PORT)
 
 # Limpeza
 clean:
