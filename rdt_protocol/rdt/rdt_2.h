@@ -17,6 +17,8 @@
 #define FALSE 0
 #define SUCCESS 1
 
+#define DEBUG FALSE
+
 #define ALPHA 0.125
 #define BETA 0.25
 
@@ -48,6 +50,10 @@ typedef struct pkt packet;
 
 extern double estimetedRTT, devRTT;
 extern struct timeval timeOutInterval;
+
+extern hseq_t _snd_seqnum;
+extern hseq_t _rcv_seqnum;
+
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest);
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src);
 
