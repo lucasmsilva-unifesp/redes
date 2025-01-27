@@ -1,6 +1,10 @@
 #include "rdt_2.h"
 
 int biterror_inject = FALSE;
+static int timeout_inject = FALSE;
+
+double estimetedRTT = 0.0, devRTT = 0.0;
+struct timeval timeOutInterval = {1, 500000};
 
 hseq_t _snd_seqnum = 1;
 hseq_t _rcv_seqnum = 1;
@@ -8,6 +12,18 @@ hseq_t _rcv_seqnum = 1;
 void handle_error(const char *message) {
     perror(message);
     exit(ERROR);
+}
+
+static void timeout_interval(double sampleRTT) {
+	long double errorRTT, timeOutIntervalRTT;
+
+	estimetedRTT = (1 - ALPHA) * estimetedRTT + ALPHA * sampleRTT;
+	errorRTT = fabs(sampleRTT - estimetedRTT);
+	devRTT = (1 - BETA) * devRTT + BETA * errorRTT;
+	timeOutIntervalRTT = estimetedRTT + 4 * devRTT;
+
+	timeOutInterval.tv_sec = (time_t) timeOutIntervalRTT;
+	timeOutInterval.tv_usec = (suseconds_t) ((timeOutIntervalRTT - timeOutInterval.tv_sec) * 1e6);
 }
 
 static unsigned short checksum(unsigned short *buf, int nbytes){
@@ -41,7 +57,7 @@ static int is_corrupted(packet *packetReceive){
 	return FALSE;
 }
 
-static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len) {
+static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
 	struct timeval time_start;
 
 	if (msg_len > MAX_MSG_LEN) {
@@ -56,7 +72,7 @@ static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, i
 	packet->header.pkt_checksum = 0;
 	packet->header.pkt_type = type;
 	packet->header.pkt_seq_num = seqNum;
-	packet->header.pkt_time = time_start.tv_sec + time_start.tv_usec/1e6;
+	packet->header.pkt_time = (time == NULL) ? time_start.tv_sec + time_start.tv_usec/1e6 : *time;
 
 	if (msg_len > 0) {
 		packet->header.pkt_size += msg_len;
@@ -79,9 +95,10 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	packet packet, ack;
 	struct sockaddr_in dest_ack;
 	int ns, nr, addrlen;
-	struct timeval time_end, timeout;
+	struct timeval time_end;
+	double sampleRTT;
 
-	if (make_pkt(&packet, PKT_DATA, _snd_seqnum, buf, buf_len) < 0)
+	if (make_pkt(&packet, PKT_DATA, _snd_seqnum, buf, buf_len, NULL) < 0)
 		handle_error("rdt_send: make_pkt failed");
 
 resend:
@@ -91,18 +108,16 @@ resend:
 		handle_error("rdt_send: sendto(PKT_DATA):");
 	}
 
+wait_ack:
 	addrlen = sizeof(struct sockaddr_in);
 
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 500000;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout)) < 0) {
+	struct timeval timeout = {timeOutInterval.tv_sec, timeOutInterval.tv_usec};
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(struct timeval)) < 0) {
 		handle_error("setsockopt(..., SO_RCVTIMEO, ...)");
 	}
 
 	nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dest_ack,
 		(socklen_t *)&addrlen);
-
-    printf("errno: %d \n", errno);
 	
 	if (nr < 0) {
     	if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -123,7 +138,8 @@ resend:
 
 	_snd_seqnum++;
 
-	printf("time send: %f\n", (time_end.tv_sec + time_end.tv_usec/1e6) - ack.header.pkt_time);
+	sampleRTT = (time_end.tv_sec + time_end.tv_usec/1e6) - ack.header.pkt_time;
+	timeout_interval(sampleRTT);
 
 	return buf_len;
 }
@@ -139,9 +155,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 	int addrLen;
 
 	memset(&data, 0, sizeof(header));
-
-	if (make_pkt(&ack, PKT_ACK, _rcv_seqnum - 1, NULL, 0) < 0)
-		handle_error("rdt_recv: make_pkt failed");
 
 rerecv:
 	addrLen = sizeof(struct sockaddr_in);
@@ -171,8 +184,18 @@ rerecv:
 
 	memcpy(buf, data.payload, msg_size);
 	
-	if (make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0) < 0)
+	if (make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time) < 0)
 		handle_error("rdt_recv: make_pkt failed");
+
+	if (timeout_inject) {
+		struct timeval time_start, time_end;
+
+		gettimeofday(&time_start, NULL);
+		gettimeofday(&time_end, NULL);
+		while (time_end.tv_sec + time_end.tv_usec/1e6 - time_start.tv_sec - time_start.tv_usec/1e6 < 1) {
+			gettimeofday(&time_end, NULL);
+		}
+	}
 
 	if (!biterror_inject) {
 		if (sendto(sockfd, &ack, ack.header.pkt_size, 0,

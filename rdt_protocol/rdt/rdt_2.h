@@ -9,12 +9,16 @@
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <math.h>
 
 #define MAX_MSG_LEN 1000
 #define ERROR -1
 #define TRUE 1
 #define FALSE 0
 #define SUCCESS 1
+
+#define ALPHA 0.125
+#define BETA 0.25
 
 typedef uint16_t hsize_t;
 typedef uint16_t hcsum_t;
@@ -42,6 +46,8 @@ struct pkt {
 };
 typedef struct pkt packet;
 
+extern double estimetedRTT, devRTT;
+extern struct timeval timeOutInterval;
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest);
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src);
 
