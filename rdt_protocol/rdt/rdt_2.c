@@ -26,22 +26,22 @@ static void timeout_interval(double sampleRTT) {
 	timeOutInterval.tv_usec = (suseconds_t) ((timeOutIntervalRTT - timeOutInterval.tv_sec) * 1e6);
 }
 
-static unsigned short checksum(unsigned short *buf, int nbytes){
-	register long sum;
-	sum = 0;
+static hcsum_t checksum(unsigned short *buf, size_t nbytes){
+	register uint32_t sum = 0;
+	const uint16_t *ptr = (const uint16_t *)buf;
 
 	while (nbytes > 1) {
-		sum += *(buf++);
+		sum += *(ptr++);
 		nbytes -= 2;
 	}
 
 	if (nbytes == 1)
-		sum += *(unsigned short *) buf;
+		sum += *(uint8_t *) ptr;
 	
 	while (sum >> 16)
 		sum = (sum & 0xffff) + (sum >> 16);
 	
-	return (unsigned short) ~sum;
+	return (hcsum_t) ~sum;
 }
 
 static int is_corrupted(packet *packetReceive){
@@ -186,8 +186,8 @@ rerecv:
 			printf("rdt_recv: iscorrupted - expected checksum: %hu, actual checksum: %hu\n",
            		checksum((void *)&data, data.header.pkt_size), data.header.pkt_checksum);
 
-			if (make_pkt(&ack, PKT_ACK, _rcv_seqnum - 1, NULL, 0, &data.header.pkt_time) < 0)
-				handle_error("rdt_recv: make_pkt failed");
+			// if (make_pkt(&ack, PKT_ACK, _rcv_seqnum - 1, NULL, 0, &data.header.pkt_time) < 0)
+			// 	handle_error("rdt_recv: make_pkt failed");
 
 			if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
 				(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
@@ -200,8 +200,8 @@ rerecv:
 		if (!has_dataseqnum(&data, _rcv_seqnum)) {
 			printf("rdt_recv: !has_dataseqnum, _rcv_seqnum: %d, data.header.pkt_seq_num: %d \n", _rcv_seqnum, data.header.pkt_seq_num);
 			
-			if (make_pkt(&ack, PKT_ACK, _rcv_seqnum-1, NULL, 0, &data.header.pkt_time) < 0)
-				handle_error("rdt_recv: make_pkt failed");
+			// if (make_pkt(&ack, PKT_ACK, _rcv_seqnum-1, NULL, 0, &data.header.pkt_time) < 0)
+			// 	handle_error("rdt_recv: make_pkt failed");
 
 			if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
 				(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
