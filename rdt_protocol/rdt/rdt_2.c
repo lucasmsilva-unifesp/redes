@@ -1,6 +1,10 @@
 #include "rdt_2.h"
 
-int biterror_inject = FALSE;
+static int biterror_inject = FALSE;
+static int timeout_inject = FALSE;
+
+double estimetedRTT = 0.0, devRTT = 0.0;
+struct timeval timeOutInterval = {1, 500000};
 
 hseq_t _snd_seqnum = 1;
 hseq_t _rcv_seqnum = 1;
@@ -10,22 +14,34 @@ void handle_error(const char *message) {
     exit(ERROR);
 }
 
-static unsigned short checksum(unsigned short *buf, int nbytes){
-	register long sum;
-	sum = 0;
+static void timeout_interval(double sampleRTT) {
+	long double errorRTT, timeOutIntervalRTT;
+
+	estimetedRTT = (1 - ALPHA) * estimetedRTT + ALPHA * sampleRTT;
+	errorRTT = fabs(sampleRTT - estimetedRTT);
+	devRTT = (1 - BETA) * devRTT + BETA * errorRTT;
+	timeOutIntervalRTT = estimetedRTT + 4 * devRTT;
+
+	timeOutInterval.tv_sec = (time_t) timeOutIntervalRTT;
+	timeOutInterval.tv_usec = (suseconds_t) ((timeOutIntervalRTT - timeOutInterval.tv_sec) * 1e6);
+}
+
+static hcsum_t checksum(unsigned short *buf, size_t nbytes){
+	register uint32_t sum = 0;
+	const uint16_t *ptr = (const uint16_t *)buf;
 
 	while (nbytes > 1) {
-		sum += *(buf++);
+		sum += *(ptr++);
 		nbytes -= 2;
 	}
 
 	if (nbytes == 1)
-		sum += *(unsigned short *) buf;
+		sum += *(uint8_t *) ptr;
 	
 	while (sum >> 16)
 		sum = (sum & 0xffff) + (sum >> 16);
 	
-	return (unsigned short) ~sum;
+	return (hcsum_t) ~sum;
 }
 
 static int is_corrupted(packet *packetReceive){
@@ -41,7 +57,7 @@ static int is_corrupted(packet *packetReceive){
 	return FALSE;
 }
 
-static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len) {
+static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
 	struct timeval time_start;
 
 	if (msg_len > MAX_MSG_LEN) {
@@ -56,7 +72,7 @@ static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, i
 	packet->header.pkt_checksum = 0;
 	packet->header.pkt_type = type;
 	packet->header.pkt_seq_num = seqNum;
-	packet->header.pkt_time = time_start.tv_sec + time_start.tv_usec/1e6;
+	packet->header.pkt_time = (time == NULL) ? time_start.tv_sec + time_start.tv_usec/1e6 : *time;
 
 	if (msg_len > 0) {
 		packet->header.pkt_size += msg_len;
@@ -79,30 +95,30 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	packet packet, ack;
 	struct sockaddr_in dest_ack;
 	int ns, nr, addrlen;
-	struct timeval time_end, timeout;
+	struct timeval time_end;
+	double sampleRTT;
 
-	if (make_pkt(&packet, PKT_DATA, _snd_seqnum, buf, buf_len) < 0)
+	if (make_pkt(&packet, PKT_DATA, _snd_seqnum, buf, buf_len, NULL) < 0)
 		handle_error("rdt_send: make_pkt failed");
 
 resend:
+	printf("Sending packet: %d\n", _snd_seqnum);
 	ns = sendto(sockfd, &packet, packet.header.pkt_size, 0,
 			(struct sockaddr *)dest, sizeof(struct sockaddr_in));
 	if (ns < 0) {
 		handle_error("rdt_send: sendto(PKT_DATA):");
 	}
 
+wait_ack:
 	addrlen = sizeof(struct sockaddr_in);
 
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 500000;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(timeout)) < 0) {
+	struct timeval timeout = {timeOutInterval.tv_sec, timeOutInterval.tv_usec};
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(struct timeval)) < 0) {
 		handle_error("setsockopt(..., SO_RCVTIMEO, ...)");
 	}
 
 	nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dest_ack,
 		(socklen_t *)&addrlen);
-
-    printf("errno: %d \n", errno);
 	
 	if (nr < 0) {
     	if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -114,16 +130,33 @@ resend:
 		}
 	}
 
-	if (is_corrupted(&ack) || !has_ackseq(&ack, _snd_seqnum)) {
-		printf("rdt_send: is_corrupted || !has_ackseq");
-		goto resend;
+	if (is_corrupted(&ack)) {
+		printf("rdt_send: is_corrupted\n");
+		goto wait_ack;
+	}
+
+	if (!has_ackseq(&ack, _snd_seqnum)) {
+		printf("rdt_send: !has_ackseq, _snd_seqnum: %d, ack.header.pkt_seq_num: %d\n", _snd_seqnum, ack.header.pkt_seq_num);
+		goto wait_ack;
+	}
+
+	if (DEBUG) {
+		printf("rdt_send: Packet send with seqnum=%d\n", packet.header.pkt_seq_num);
+		printf("rdt_recv: Received ACK with seqnum=%d\n", ack.header.pkt_seq_num);
 	}
 
     gettimeofday(&time_end, NULL);
 
 	_snd_seqnum++;
 
-	printf("time send: %f\n", (time_end.tv_sec + time_end.tv_usec/1e6) - ack.header.pkt_time);
+	sampleRTT = (time_end.tv_sec + time_end.tv_usec/1e6) - ack.header.pkt_time;
+	timeout_interval(sampleRTT);
+
+	if (DEBUG) {
+		printf("rdt_send: sampleRTT: %f, estimetedRTT: %f, devRTT: %f, timeoutInterval: %ld.%06ld\n",
+			sampleRTT, estimetedRTT, devRTT,
+			timeOutInterval.tv_sec, timeOutInterval.tv_usec);
+	}
 
 	return buf_len;
 }
@@ -140,9 +173,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 
 	memset(&data, 0, sizeof(header));
 
-	if (make_pkt(&ack, PKT_ACK, _rcv_seqnum - 1, NULL, 0) < 0)
-		handle_error("rdt_recv: make_pkt failed");
-
 rerecv:
 	addrLen = sizeof(struct sockaddr_in);
 
@@ -151,28 +181,58 @@ rerecv:
 		handle_error("reccfrom():");
 	}
 
-	if (!biterror_inject && (is_corrupted(&data) || !has_dataseqnum(&data, _rcv_seqnum))) {
-		printf("rdt_recv: iscorrupted || has_dataseqnum \n");
+	if (!biterror_inject) {
+		if (is_corrupted(&data)) {
+			printf("rdt_recv: iscorrupted - expected checksum: %hu, actual checksum: %hu\n",
+           		checksum((void *)&data, data.header.pkt_size), data.header.pkt_checksum);
 
-		if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
-			(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
-			handle_error("rdt_rcv: sendto(PKT_ACK - 1)");
+			// if (make_pkt(&ack, PKT_ACK, _rcv_seqnum - 1, NULL, 0, &data.header.pkt_time) < 0)
+			// 	handle_error("rdt_recv: make_pkt failed");
+
+			if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
+				(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
+				handle_error("rdt_rcv: sendto(PKT_ACK - 1)");
+			}
+
+			goto rerecv;
 		}
 
-		goto rerecv;
+		if (!has_dataseqnum(&data, _rcv_seqnum)) {
+			printf("rdt_recv: !has_dataseqnum, _rcv_seqnum: %d, data.header.pkt_seq_num: %d \n", _rcv_seqnum, data.header.pkt_seq_num);
+			
+			// if (make_pkt(&ack, PKT_ACK, _rcv_seqnum-1, NULL, 0, &data.header.pkt_time) < 0)
+			// 	handle_error("rdt_recv: make_pkt failed");
+
+			if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
+				(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
+				handle_error("rdt_rcv: sendto(PKT_ACK - 1)");
+			}
+
+			goto rerecv;
+		}
 	}
 
 	int msg_size = data.header.pkt_size - sizeof(header);
 	if (msg_size > buf_len) {
-		printf("rdt_rcv(): tamanho insuficiente de buf (%d) para payload (%d).\n", 
+		printf("rdt_rcv(): buffer size is insufficient (%d) for payload (%d).\n", 
 			buf_len, msg_size);
 		handle_error("rdt_rcv: buffer size");
 	}
 
 	memcpy(buf, data.payload, msg_size);
 	
-	if (make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0) < 0)
+	if (make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time) < 0)
 		handle_error("rdt_recv: make_pkt failed");
+
+	if (timeout_inject) {
+		struct timeval time_start, time_end;
+
+		gettimeofday(&time_start, NULL);
+		gettimeofday(&time_end, NULL);
+		while (time_end.tv_sec + time_end.tv_usec/1e6 - time_start.tv_sec - time_start.tv_usec/1e6 < 1) {
+			gettimeofday(&time_end, NULL);
+		}
+	}
 
 	if (!biterror_inject) {
 		if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
@@ -181,8 +241,10 @@ rerecv:
 		}
 	}
 
-	printf("rdt_recv: Packet received with seqnum=%d\n", data.header.pkt_seq_num);
-	printf("rdt_recv: Sending ACK with seqnum=%d\n", ack.header.pkt_seq_num);
+	if (DEBUG) {
+		printf("rdt_recv: Packet received with seqnum=%d\n", data.header.pkt_seq_num);
+		printf("rdt_recv: Sending ACK with seqnum=%d\n", ack.header.pkt_seq_num);
+	}
 
 	_rcv_seqnum++;
 
