@@ -4,7 +4,7 @@ CFLAGS = -Wall -I.
 LDFLAGS = 
 
 # Diretórios e arquivos
-RDT_SRC = rdt/rdt_2.c
+RDT_SRC = rdt/rdt_3.c
 SERVER_SRC = server.c
 CLIENT_SRC = client.c
 
