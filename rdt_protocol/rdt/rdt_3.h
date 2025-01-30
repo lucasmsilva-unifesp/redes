@@ -1,9 +1,10 @@
-#ifndef _RDT_2_H_
-#define _RDT_2_H_
+#ifndef _RDT_3_H_
+#define _RDT_3_H_
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -17,7 +18,7 @@
 #define FALSE 0
 #define SUCCESS 1
 
-#define DEBUG FALSE
+#define DEBUG 1
 
 #define ALPHA 0.125
 #define BETA 0.25

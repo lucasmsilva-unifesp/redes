@@ -1,10 +1,10 @@
-#include "rdt_2.h"
+#include "rdt_3.h"
 
 static int biterror_inject = FALSE;
-static int timeout_inject = FALSE;
+static int timeout_inject = TRUE;
 
 double estimetedRTT = 0.0, devRTT = 0.0;
-struct timeval timeOutInterval = {1, 500000};
+struct timeval timeOutInterval = {0, 50000};
 
 hseq_t _snd_seqnum = 1;
 hseq_t _rcv_seqnum = 1;

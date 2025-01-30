@@ -1,4 +1,4 @@
-#include "./rdt/rdt_2.h"
+#include "./rdt/rdt_3.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +7,7 @@
 void server(int port) {
     int sockfd;
     struct sockaddr_in sock_addr, client_addr;
+    FILE *file;
 
     char buffer[MAX_MSG_LEN];
     int msg_len;
@@ -25,6 +26,13 @@ void server(int port) {
 
     printf("Server is running and waiting for messages on port %d...\n", port);
 
+    file = fopen("received.txt", "a");
+    if (file == NULL) {
+        handle_error("Could not open file");
+        close(sockfd);
+        return;
+    }
+
     while (1) {
         memset(buffer, 0, MAX_MSG_LEN);
 
@@ -33,8 +41,19 @@ void server(int port) {
             continue;
         }
 
-        printf("Received message: %s\n", buffer);
+        size_t bytes_wrote = fwrite(buffer, 1, msg_len, file);
+
+        if (bytes_wrote < msg_len) {
+            handle_error("Error writing to file");
+            break;
+        }
+
+        fflush(file);
+
+        printf("Received %d bytes and wrote to file\n", msg_len);
     }
+
+    fclose(file);
 }
 
 int main(int argc, char **argv) {
