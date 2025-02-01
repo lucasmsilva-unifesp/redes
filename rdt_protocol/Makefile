@@ -5,6 +5,7 @@ LDFLAGS =
 
 # Diretórios e arquivos
 RDT_SRC = rdt/rdt_3.c
+UTILS_SRC = rdt/utils.c
 SERVER_SRC = server.c
 CLIENT_SRC = client.c
 
@@ -19,10 +20,10 @@ IP ?= 127.0.0.1
 # Regras de compilação
 all: $(SERVER) $(CLIENT)
 
-$(SERVER): $(SERVER_SRC) $(RDT_SRC)
+$(SERVER): $(SERVER_SRC) $(RDT_SRC) $(UTILS_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-$(CLIENT): $(CLIENT_SRC) $(RDT_SRC)
+$(CLIENT): $(CLIENT_SRC) $(RDT_SRC) $(UTILS_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Execução
