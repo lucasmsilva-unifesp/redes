@@ -1,9 +1,23 @@
-#include "./rdt/rdt_3.h"
+#include "rdt/rdt_3.h"
+#include "rdt/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+void ack_handler(int sockfd) {
+    packet ack_pkt;
+    struct sockaddr_in src;
+    socklen_t addrlen = sizeof(src);
+    
+    while(1) {
+        if (recvfrom(sockfd, &ack_pkt, sizeof(packet), 0,
+                   (struct sockaddr *)&src, &addrlen) > 0) {
+            process_ack(ack_pkt);
+        }
+    }
+}
 
 void client(const char *server_ip, int port) {
     int sockfd;

@@ -1,61 +1,18 @@
 #include "rdt_3.h"
+#include "utils.h"
 
 static int biterror_inject = FALSE;
 static int timeout_inject = TRUE;
 
-double estimetedRTT = 0.0, devRTT = 0.0;
+hseq_t snd_base = 0;
+hseq_t rcv_base = 0;
+hseq_t next_seq_num = 0;
+
+double estimatedRTT = 0.0, devRTT = 0.0;
 struct timeval timeOutInterval = {0, 50000};
 
 hseq_t _snd_seqnum = 1;
 hseq_t _rcv_seqnum = 1;
-
-void handle_error(const char *message) {
-    perror(message);
-    exit(ERROR);
-}
-
-static void timeout_interval(double sampleRTT) {
-	long double errorRTT, timeOutIntervalRTT;
-
-	estimetedRTT = (1 - ALPHA) * estimetedRTT + ALPHA * sampleRTT;
-	errorRTT = fabs(sampleRTT - estimetedRTT);
-	devRTT = (1 - BETA) * devRTT + BETA * errorRTT;
-	timeOutIntervalRTT = estimetedRTT + 4 * devRTT;
-
-	timeOutInterval.tv_sec = (time_t) timeOutIntervalRTT;
-	timeOutInterval.tv_usec = (suseconds_t) ((timeOutIntervalRTT - timeOutInterval.tv_sec) * 1e6);
-}
-
-static hcsum_t checksum(unsigned short *buf, size_t nbytes){
-	register uint32_t sum = 0;
-	const uint16_t *ptr = (const uint16_t *)buf;
-
-	while (nbytes > 1) {
-		sum += *(ptr++);
-		nbytes -= 2;
-	}
-
-	if (nbytes == 1)
-		sum += *(uint8_t *) ptr;
-	
-	while (sum >> 16)
-		sum = (sum & 0xffff) + (sum >> 16);
-	
-	return (hcsum_t) ~sum;
-}
-
-static int is_corrupted(packet *packetReceive){
-	packet pkt_temp = *packetReceive;
-	pkt_temp.header.pkt_checksum = 0;
-
-	unsigned short pkt_temp_checksum;
-	pkt_temp_checksum = checksum((void *)&pkt_temp, pkt_temp.header.pkt_size);
-	if (pkt_temp_checksum != packetReceive->header.pkt_checksum){
-		return TRUE;
-	}
-
-	return FALSE;
-}
 
 static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
 	struct timeval time_start;
@@ -83,12 +40,6 @@ static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, i
 	packet->header.pkt_checksum = checksum((unsigned short *) packet, packet->header.pkt_size);
 
 	return SUCCESS;
-}
-
-static int has_ackseq(packet *packet, hseq_t seqnum) {
-	if (packet->header.pkt_type != PKT_ACK || packet->header.pkt_seq_num != seqnum)
-		return FALSE;
-	return TRUE;
 }
 
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
@@ -153,18 +104,12 @@ wait_ack:
 	timeout_interval(sampleRTT);
 
 	if (DEBUG) {
-		printf("rdt_send: sampleRTT: %f, estimetedRTT: %f, devRTT: %f, timeoutInterval: %ld.%06ld\n",
-			sampleRTT, estimetedRTT, devRTT,
+		printf("rdt_send: sampleRTT: %f, estimatedRTT: %f, devRTT: %f, timeoutInterval: %ld.%06ld\n",
+			sampleRTT, estimatedRTT, devRTT,
 			timeOutInterval.tv_sec, timeOutInterval.tv_usec);
 	}
 
 	return buf_len;
-}
-
-static int has_dataseqnum(packet *packet, hseq_t seqNum) {
-	if (packet->header.pkt_seq_num != seqNum || packet->header.pkt_type != PKT_DATA)
-		return FALSE;
-	return TRUE;
 }
 
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {

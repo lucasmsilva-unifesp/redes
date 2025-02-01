@@ -17,15 +17,17 @@
 #define TRUE 1
 #define FALSE 0
 #define SUCCESS 1
-
 #define DEBUG 1
-
 #define ALPHA 0.125
 #define BETA 0.25
 
+#define MAX_SEQ_NUM 5
+#define WINDOW_SIZE 10
+#define TIMEOUT 0.5
+
 typedef uint16_t hsize_t;
 typedef uint16_t hcsum_t;
-typedef uint16_t hseq_t;
+typedef uint32_t hseq_t;
 typedef time_t   htime_t;
 
 typedef enum {
@@ -47,13 +49,29 @@ struct pkt {
 	header header;
 	unsigned char payload[MAX_MSG_LEN];
 };
+
 typedef struct pkt packet;
 
-extern double estimetedRTT, devRTT;
+typedef struct {
+    packet pkt;
+    int acked;
+    struct timeval send_time;
+} SentPacket;
+
+typedef struct {
+    packet pkt;
+    int received;
+} ReceivedPacket;
+
+extern double estimatedRTT, devRTT;
 extern struct timeval timeOutInterval;
 
 extern hseq_t _snd_seqnum;
 extern hseq_t _rcv_seqnum;
+
+extern hseq_t snd_base;
+extern hseq_t rcv_base;
+extern hseq_t next_seq_num;
 
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest);
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src);
