@@ -73,6 +73,9 @@ extern hseq_t snd_base;
 extern hseq_t rcv_base;
 extern hseq_t next_seq_num;
 
+extern SentPacket snd_window[WINDOW_SIZE];
+extern ReceivedPacket rcv_window[WINDOW_SIZE];
+
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest);
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src);
 
