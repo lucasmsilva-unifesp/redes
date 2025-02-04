@@ -17,18 +17,16 @@
 #define TRUE 1
 #define FALSE 0
 #define SUCCESS 1
-#define DEBUG 1
+#define DEBUG 0
 #define ALPHA 0.125
 #define BETA 0.25
 
-#define MAX_SEQ_NUM 5
 #define WINDOW_SIZE 10
-#define TIMEOUT 0.5
 
 typedef uint16_t hsize_t;
 typedef uint16_t hcsum_t;
 typedef uint32_t hseq_t;
-typedef time_t   htime_t;
+typedef struct timeval htime_t;
 
 typedef enum {
     PKT_ACK = 0,
@@ -41,6 +39,7 @@ struct hdr {
 	PacketType pkt_type;
 	hcsum_t pkt_checksum;
 	htime_t pkt_time;
+    int pkt_acked;
 };
 
 typedef struct hdr header;
@@ -53,15 +52,9 @@ struct pkt {
 typedef struct pkt packet;
 
 typedef struct {
-    packet pkt;
-    int acked;
-    struct timeval send_time;
-} SentPacket;
-
-typedef struct {
-    packet pkt;
-    int received;
-} ReceivedPacket;
+    packet *packets;
+    int total_packets;
+} chunks_info;
 
 extern double estimatedRTT, devRTT;
 extern struct timeval timeOutInterval;
@@ -73,11 +66,10 @@ extern hseq_t snd_base;
 extern hseq_t rcv_base;
 extern hseq_t next_seq_num;
 
-extern SentPacket snd_window[WINDOW_SIZE];
-extern ReceivedPacket rcv_window[WINDOW_SIZE];
-
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest);
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src);
+
+chunks_info divide_file_to_chunks(int buf_len, void *buf);
 
 void handle_error(const char *message);
 
