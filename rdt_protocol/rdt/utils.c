@@ -81,6 +81,22 @@ int timeval_compare(struct timeval *pkt_time, struct timeval *current_time, int 
         return 0;
 }
 
+void format_timestamp(double timestamp) {
+    time_t rawtime = (time_t)timestamp;
+    double fractional = timestamp - (time_t)timestamp;
+    struct tm ts;
+    char buf[80];
+    
+    ts = *localtime(&rawtime);
+    double msec = fractional * 1000;
+    strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &ts);
+    char final_buf[100];
+    char tz[6];
+    strftime(tz, sizeof(tz), "%Z", &ts);
+    snprintf(final_buf, sizeof(final_buf), "%s.%03.0f", buf, msec);
+    printf("%s\n", final_buf);
+}
+
 // int timeval_compare(struct timeval *t1, struct timeval *t2) {
 //     if (t1->tv_sec < t2->tv_sec)
 //         return -1;

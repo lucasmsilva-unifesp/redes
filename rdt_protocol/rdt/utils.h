@@ -15,4 +15,6 @@ int has_dataseqnum(packet *packet, hseq_t seqNum);
 void check_timeouts(int sockfd, struct sockaddr_in *dest);
 void process_ack(packet ack_pkt);
 
+void format_timestamp(double timestamp);
+
 #endif

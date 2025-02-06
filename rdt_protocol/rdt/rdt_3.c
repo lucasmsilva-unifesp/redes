@@ -14,7 +14,7 @@ hseq_t next_seq_num = 0;
 int packets_sent = 0;
 
 double estimatedRTT = 0.0, devRTT = 0.0;
-struct timeval timeOutInterval = {0, 10};
+struct timeval timeOutInterval = {0, 500000};
 
 hseq_t _snd_seqnum = 0;
 hseq_t _rcv_seqnum = 0;
@@ -103,12 +103,12 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			_snd_seqnum++;
 		}
 
-		struct timeval carlos;
-		gettimeofday(&carlos, NULL);
+		// struct timeval carlos;
+		// gettimeofday(&carlos, NULL);
 
-		timeval_compare(&sliding_window[0]->header.pkt_time, &carlos, TRUE);
+		// timeval_compare(&sliding_window[0]->header.pkt_time, &carlos, TRUE);
 
-		verify_acks(sockfd, sliding_window);
+		// verify_acks(sockfd, sliding_window);
 
 		// // Verifica se o pacote já foi reconhecido, possuiu um ACK
 		// // Avança janela
@@ -134,8 +134,21 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				// Verifica se houve timeout
 				if (timeval_compare(&current_pkt->header.pkt_time, &current_time, 0) > 0) {
 
-					printf("\nTimeout for packet %d, resending...\n", i);
+					printf("\nTimeout for packet %d.\n", i);
 					
+					if(DEBUG){
+						double current_time_ts = current_time.tv_sec + current_time.tv_usec/1e6;
+						double current_pkt_ts = current_pkt->header.pkt_time.tv_sec + current_pkt->header.pkt_time.tv_usec/1e6;
+						double diff_time_ts = current_time_ts - current_pkt_ts;
+
+						printf("	Current time: %f, ", current_time_ts);
+						format_timestamp(current_time_ts);
+						printf("	Packet time: %f, ", current_pkt_ts);
+						format_timestamp(current_pkt_ts);
+						printf("	Diff time: %f, ", diff_time_ts);
+						format_timestamp(diff_time_ts);
+					}
+
 					// Reenvia o pacote
 					ns = sendto(sockfd, current_pkt, current_pkt->header.pkt_size, 0,
 							(struct sockaddr *)dest, sizeof(struct sockaddr_in));
