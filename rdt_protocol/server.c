@@ -33,11 +33,13 @@ void server(int port) {
         return;
     }
 
+    set_window();
+
     while (1) {
         memset(buffer, 0, MAX_MSG_LEN);
 
         if ((msg_len = rdt_recv(sockfd, buffer, MAX_MSG_LEN, &client_addr)) < 0) {
-            printf("Server: rdt_recv() failed\n");
+            printf("Server: rdt_recv() failed || packet corrupted\n");
             continue;
         }
 
@@ -51,6 +53,11 @@ void server(int port) {
         fflush(file);
 
         printf("Received %d bytes and wrote to file\n", msg_len);
+
+        // deal with end of file
+        // if (msg_len < MAX_MSG_LEN) {
+        //     break;
+        // }
     }
 
     fclose(file);

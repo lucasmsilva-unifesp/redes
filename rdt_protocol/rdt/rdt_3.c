@@ -14,10 +14,31 @@ hseq_t next_seq_num = 0;
 int packets_sent = 0;
 
 double estimatedRTT = 0.0, devRTT = 0.0;
-struct timeval timeOutInterval = {0, 500000};
+struct timeval timeOutInterval = {2, 0};
 
 hseq_t _snd_seqnum = 0;
 hseq_t _rcv_seqnum = 0;
+
+packet *recv_window[WINDOW_SIZE];
+
+void sleep_for_timeout() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    
+    // Use microseconds for more unique seed
+    srand(tv.tv_sec * 1000000 + tv.tv_usec);
+    
+    int sleep_time = rand() % 4; 
+    printf("Sleeping for %d seconds...\n", sleep_time);
+    
+    sleep(sleep_time);
+}
+
+void set_window() {
+	for (int i = 0; i < WINDOW_SIZE; i++) {
+        recv_window[i] = NULL;
+    }
+}
 
 static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
 	struct timeval time_start;
@@ -48,7 +69,6 @@ static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, i
 }
 
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
-	packet data_pkt, ack; // Podemos apagar isso depois
 	struct sockaddr_in dest_ack;
 	int ns, nr, addrlen;
 	struct timeval time_end;
@@ -108,7 +128,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 
 		// timeval_compare(&sliding_window[0]->header.pkt_time, &carlos, TRUE);
 
-		// verify_acks(sockfd, sliding_window);
+		verify_acks(sockfd, sliding_window);
 
 		// // Verifica se o pacote já foi reconhecido, possuiu um ACK
 		// // Avança janela
@@ -172,55 +192,6 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 		}
 	}
 
-// wait_ack:
-// 	addrlen = sizeof(struct sockaddr_in);
-
-// 	struct timeval timeout = {timeOutInterval.tv_sec, timeOutInterval.tv_usec};
-// 	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char*) &timeout, sizeof(struct timeval)) < 0) {
-// 		handle_error("setsockopt(..., SO_RCVTIMEO, ...)");
-// 	}
-
-// 	nr = recvfrom(sockfd, &ack, sizeof(ack), 0, (struct sockaddr *)&dest_ack,
-// 		(socklen_t *)&addrlen);
-	
-// 	if (nr < 0) {
-//     	if (errno == EAGAIN || errno == EWOULDBLOCK) {
-// 			printf("Timeout reached. Resending data_pkt.\n");
-// 			// goto resend;
-// 		} else {
-// 			printf("rdt_send: recvfrom(PKT_ACK): %d\n", nr);
-// 			handle_error("rdt_send: recvfrom(PKT_ACK)");
-// 		}
-// 	}
-
-	// if (is_corrupted(&ack)) {
-	// 	printf("rdt_send: is_corrupted\n");
-	// 	goto wait_ack;
-	// }
-
-	// if (!has_ackseq(&ack, _snd_seqnum)) {
-	// 	printf("rdt_send: !has_ackseq, _snd_seqnum: %d, ack.header.pkt_seq_num: %d\n", _snd_seqnum, ack.header.pkt_seq_num);
-	// 	goto wait_ack;
-	// }
-
-	// if (DEBUG) {
-	// 	printf("rdt_send: data_pkt send with seqnum=%d\n", data_pkt.header.pkt_seq_num);
-	// 	printf("rdt_recv: Received ACK with seqnum=%d\n", ack.header.pkt_seq_num);
-	// }
-
-    // gettimeofday(&time_end, NULL);
-
-	// _snd_seqnum++;
-
-	// sampleRTT = (time_end.tv_sec + time_end.tv_usec/1e6) - ack.header.pkt_time;
-	// timeout_interval(sampleRTT);
-
-	// if (DEBUG) {
-	// 	printf("rdt_send: sampleRTT: %f, estimatedRTT: %f, devRTT: %f, timeoutInterval: %ld.%06ld\n",
-	// 		sampleRTT, estimatedRTT, devRTT,
-	// 		timeOutInterval.tv_sec, timeOutInterval.tv_usec);
-	// }
-
 	return buf_len;
 }
 
@@ -272,7 +243,8 @@ void verify_acks(int sockfd, packet** sliding_window) {
 				double sampleRTT = (current_time.tv_sec + current_time.tv_usec/1e6) - 
 					(ack_pkt.header.pkt_time.tv_sec + ack_pkt.header.pkt_time.tv_usec/1e6);
 
-				timeout_interval(sampleRTT);
+				sleep_for_timeout();
+				// timeout_interval(sampleRTT);
 			}
 		} else {
 			printf("Received corrupted ACK\n");
@@ -316,80 +288,81 @@ chunks_info divide_file_to_chunks(int buf_len, void *buf) {
 }
 
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
-	packet *sliding_window[WINDOW_SIZE];
-	packet data, ack;
-	int addrLen;
+    int total_received = 0;
 
-	memset(&data, 0, sizeof(header));
+    while (1) {
+        fd_set readfds;
+        packet data, ack;
+        int addrLen = sizeof(struct sockaddr_in);
 
-rerecv:
-	addrLen = sizeof(struct sockaddr_in);
+        FD_ZERO(&readfds);
+        FD_SET(sockfd, &readfds);
 
-	if (recvfrom(sockfd, &data, sizeof(packet), 0, (struct sockaddr*)src,
-		(socklen_t *)&addrLen) < 0) {
-		handle_error("reccfrom():");
-	}
+        // Wait for packet or timeout
+        int ready = select(sockfd + 1, &readfds, NULL, NULL, &timeOutInterval);
 
-	if (!biterror_inject) {
-		if (is_corrupted(&data)) {
-			printf("rdt_recv: iscorrupted - expected checksum: %hu, actual checksum: %hu\n",
-           		checksum((void *)&data, data.header.pkt_size), data.header.pkt_checksum);
+        if (ready < 0) {
+            handle_error("select error in rdt_recv");
+        }
 
-			if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
-				(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
-				handle_error("rdt_rcv: sendto(PKT_ACK - 1)");
-			}
+        if (ready == 0) {
+            continue;
+        }
 
-			goto rerecv;
-		}
+        if (recvfrom(sockfd, &data, sizeof(packet), 0, 
+                     (struct sockaddr*)src, (socklen_t *)&addrLen) < 0) {
+            handle_error("recvfrom in rdt_recv");
+        }
 
-		if (!has_dataseqnum(&data, _rcv_seqnum)) {
-			printf("rdt_recv: !has_dataseqnum, _rcv_seqnum: %d, data.header.pkt_seq_num: %d \n", _rcv_seqnum, data.header.pkt_seq_num);
+        if (is_corrupted(&data)) {
+            continue;
+        }
 
-			if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
-				(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
-				handle_error("rdt_rcv: sendto(PKT_ACK - 1)");
-			}
+        if (data.header.pkt_seq_num >= _rcv_seqnum && 
+            data.header.pkt_seq_num < _rcv_seqnum + WINDOW_SIZE) {
+            
+            int window_index = data.header.pkt_seq_num % WINDOW_SIZE;
+            
+            if (recv_window[window_index] == NULL) {
+                recv_window[window_index] = malloc(sizeof(packet));
+                memcpy(recv_window[window_index], &data, sizeof(packet));
 
-			goto rerecv;
-		}
-	}
+                make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time);
+                sendto(sockfd, &ack, ack.header.pkt_size, 0, 
+                       (struct sockaddr*)src, addrLen);
 
-	int msg_size = data.header.pkt_size - sizeof(header);
-	if (msg_size > buf_len) {
-		printf("rdt_rcv(): buffer size is insufficient (%d) for payload (%d).\n", 
-			buf_len, msg_size);
-		handle_error("rdt_rcv: buffer size");
-	}
+				if (DEBUG) {
+					printf("rdt_recv: Packet received with seqnum=%d\n", data.header.pkt_seq_num);
+					printf("rdt_recv: Sending ACK with seqnum=%d\n", ack.header.pkt_seq_num);
+				}
+            }
 
-	memcpy(buf, data.payload, msg_size);
-	
-	if (make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time) < 0)
-		handle_error("rdt_recv: make_pkt failed");
+            while (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
+                int msg_size = recv_window[_rcv_seqnum % WINDOW_SIZE]->header.pkt_size - sizeof(header);
+                
+                if (total_received + msg_size > buf_len) {
+                    handle_error("rdt_recv: buffer receive overflow");
+                }
 
-	if (timeout_inject) {
-		struct timeval time_start, time_end;
+                memcpy(buf, 
+                       recv_window[_rcv_seqnum % WINDOW_SIZE]->payload, 
+                       msg_size);
+                
+                total_received += msg_size;
 
-		gettimeofday(&time_start, NULL);
-		gettimeofday(&time_end, NULL);
-		while (time_end.tv_sec + time_end.tv_usec/1e6 - time_start.tv_sec - time_start.tv_usec/1e6 < 1) {
-			gettimeofday(&time_end, NULL);
-		}
-	}
+                free(recv_window[_rcv_seqnum % WINDOW_SIZE]);
+                recv_window[_rcv_seqnum % WINDOW_SIZE] = NULL;
 
-	if (!biterror_inject) {
-		if (sendto(sockfd, &ack, ack.header.pkt_size, 0,
-			(struct sockaddr*)src, (socklen_t)sizeof(struct sockaddr_in)) < 0) {
-			handle_error("rdt_rcv: sendto(PKT_ACK)");
-		}
-	}
+				if (DEBUG) {
+					printf("rdt_recv: Buffer filled with size=%d and index=%d\n", msg_size, _rcv_seqnum % WINDOW_SIZE);
+				}
 
-	if (DEBUG) {
-		printf("rdt_recv: Packet received with seqnum=%d\n", data.header.pkt_seq_num);
-		printf("rdt_recv: Sending ACK with seqnum=%d\n", ack.header.pkt_seq_num);
-	}
+                _rcv_seqnum++;
+            }
+        }
 
-	_rcv_seqnum++;
+		break;
+    }
 
-	return data.header.pkt_size - sizeof(header);
+    return total_received;
 }

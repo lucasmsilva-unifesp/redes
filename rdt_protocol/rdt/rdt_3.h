@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #include <time.h>
 #include <errno.h>
 #include <math.h>
@@ -17,7 +18,7 @@
 #define TRUE 1
 #define FALSE 0
 #define SUCCESS 1
-#define DEBUG 0
+#define DEBUG 1
 #define ALPHA 0.125
 #define BETA 0.25
 
@@ -72,5 +73,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src);
 chunks_info divide_file_to_chunks(int buf_len, void *buf);
 
 void handle_error(const char *message);
+void set_window();
 
 #endif
