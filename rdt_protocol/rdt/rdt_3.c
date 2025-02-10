@@ -318,6 +318,19 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
             continue;
         }
 
+		if (data.header.pkt_seq_num < _rcv_seqnum) {
+            make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time);
+            sendto(sockfd, &ack, ack.header.pkt_size, 0, 
+                   (struct sockaddr*)src, addrLen);
+
+            if (DEBUG) {
+                printf("rdt_recv: Duplicate ACK for packet %d (current base: %d)\n", 
+                       data.header.pkt_seq_num, _rcv_seqnum);
+            }
+            
+            continue;
+        }
+
         if (data.header.pkt_seq_num >= _rcv_seqnum && 
             data.header.pkt_seq_num < _rcv_seqnum + WINDOW_SIZE) {
             
