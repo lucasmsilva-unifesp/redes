@@ -5,9 +5,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static int biterror_inject = FALSE;
-static int timeout_inject = FALSE;
-
 hseq_t snd_base = 0;
 hseq_t rcv_base = 0;
 hseq_t next_seq_num = 0;
@@ -40,6 +37,76 @@ void set_window() {
     }
 }
 
+static void verify_acks(int sockfd, packet** sliding_window) {
+	// Verifica ACKs e timeouts
+	fd_set readfds;
+	struct timeval tv;
+	packet ack_pkt;
+	struct sockaddr_in ack_addr;
+	int addr_len = sizeof(ack_addr);
+
+	// Configura o select
+	FD_ZERO(&readfds);
+	FD_SET(sockfd, &readfds);
+
+	// Configura timeout para o select (menor timeout entre os pacotes na janela)
+	tv.tv_sec = timeOutInterval.tv_sec;
+	tv.tv_usec = timeOutInterval.tv_usec;
+
+	// Espera por ACKs ou timeout
+	int ready = select(sockfd + 1, &readfds, NULL, NULL, &tv);
+
+	if (ready < 0) {
+		handle_error("select error");
+	} else if (ready > 0) {
+		// Recebe o ACK
+		int nr = recvfrom(sockfd, &ack_pkt, sizeof(ack_pkt), 0, 
+						(struct sockaddr *)&ack_addr, (socklen_t *restrict)&addr_len);
+		
+		if (nr < 0) {
+			handle_error("rdt_send: recvfrom(ACK)");
+		}
+		
+		printf("\nReceived ACK for packet: %d\n", ack_pkt.header.pkt_seq_num);
+		
+		// Verifica se o ACK não está corrompido
+		if (!is_corrupted(&ack_pkt)) {
+			printf("ACK não foi corrompido\n");
+			// Encontra o pacote na janela e marca como confirmado
+			int ack_seq = ack_pkt.header.pkt_seq_num;
+			if (ack_seq >= snd_base && ack_seq < _snd_seqnum) {
+				sliding_window[ack_seq % WINDOW_SIZE]->header.pkt_acked = 1;
+				printf("Marked packet %d as ACKed\n", ack_seq);
+
+				sleep_for_timeout();
+			}
+		} else {
+			printf("Received corrupted ACK\n");
+		}
+	}
+}
+
+static int timeval_compare(struct timeval *pkt_time, struct timeval *current_time, int print) {
+    double pkt_total = pkt_time->tv_sec * 1000000 + pkt_time->tv_usec;
+    double timeout_total = timeOutInterval.tv_sec * 1000000 + timeOutInterval.tv_usec;
+    double sum = pkt_total + timeout_total;
+    double current = current_time->tv_sec * 1000000 + current_time->tv_usec;
+    
+	if (print) {
+		printf("Packet time: %lf microsec\n", pkt_total);
+		printf("Timeout interval: %lf microsec\n", timeout_total);
+		printf("Sum (pkt + timeout): %lf microsec\n", sum);
+		printf("Current time: %lf microsec\n", current);
+		printf("Diferenca (sum - current): %lf microsec\n", sum - current);
+		printf("Tempo de criação do primeiro pacote: %ld.%06ld\n", pkt_time->tv_sec, pkt_time->tv_usec);
+	}
+
+    if(sum < current)
+        return 1;
+    else
+        return 0;
+}
+
 static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
 	struct timeval time_start;
 
@@ -69,10 +136,7 @@ static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, i
 }
 
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
-	struct sockaddr_in dest_ack;
-	int ns, nr, addrlen;
-	struct timeval time_end;
-	double sampleRTT;
+	int ns;
 	chunks_info chunks;
 
 	chunks = divide_file_to_chunks(buf_len, buf);
@@ -193,63 +257,6 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	}
 
 	return buf_len;
-}
-
-void verify_acks(int sockfd, packet** sliding_window) {
-	// Verifica ACKs e timeouts
-	fd_set readfds;
-	struct timeval tv;
-	packet ack_pkt;
-	struct sockaddr_in ack_addr;
-	int addr_len = sizeof(ack_addr);
-
-	// Configura o select
-	FD_ZERO(&readfds);
-	FD_SET(sockfd, &readfds);
-
-	// Configura timeout para o select (menor timeout entre os pacotes na janela)
-	tv.tv_sec = timeOutInterval.tv_sec;
-	tv.tv_usec = timeOutInterval.tv_usec;
-
-	// Espera por ACKs ou timeout
-	int ready = select(sockfd + 1, &readfds, NULL, NULL, &tv);
-
-	if (ready < 0) {
-		handle_error("select error");
-	} else if (ready > 0) {
-		// Recebe o ACK
-		int nr = recvfrom(sockfd, &ack_pkt, sizeof(ack_pkt), 0,
-						(struct sockaddr *)&ack_addr, &addr_len);
-		
-		if (nr < 0) {
-			handle_error("rdt_send: recvfrom(ACK)");
-		}
-		
-		printf("\nReceived ACK for packet: %d\n", ack_pkt.header.pkt_seq_num);
-		
-		// Verifica se o ACK não está corrompido
-		if (!is_corrupted(&ack_pkt)) {
-			printf("ACK não foi corrompido\n");
-			// Encontra o pacote na janela e marca como confirmado
-			int ack_seq = ack_pkt.header.pkt_seq_num;
-			if (ack_seq >= snd_base && ack_seq < _snd_seqnum) {
-				sliding_window[ack_seq % WINDOW_SIZE]->header.pkt_acked = 1;
-				printf("Marked packet %d as ACKed\n", ack_seq);
-				
-				// Atualiza estimativas de RTT se necessário
-				struct timeval current_time;
-				gettimeofday(&current_time, NULL);
-
-				double sampleRTT = (current_time.tv_sec + current_time.tv_usec/1e6) - 
-					(ack_pkt.header.pkt_time.tv_sec + ack_pkt.header.pkt_time.tv_usec/1e6);
-
-				sleep_for_timeout();
-				// timeout_interval(sampleRTT);
-			}
-		} else {
-			printf("Received corrupted ACK\n");
-		}
-	}
 }
 
 chunks_info divide_file_to_chunks(int buf_len, void *buf) {

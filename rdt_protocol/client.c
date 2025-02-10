@@ -40,7 +40,7 @@ void client(const char *server_ip, int port) {
         handle_error("Memory allocation failed!\n");
         fclose(file);
         close(sockfd);
-        return 0;
+        return;
     }
 
     fread(buffer, 1, file_size, file);

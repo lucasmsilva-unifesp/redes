@@ -60,27 +60,6 @@ int has_dataseqnum(packet *packet, hseq_t seqNum) {
 	return TRUE;
 }
 
-int timeval_compare(struct timeval *pkt_time, struct timeval *current_time, int print) {
-    double pkt_total = pkt_time->tv_sec * 1000000 + pkt_time->tv_usec;
-    double timeout_total = timeOutInterval.tv_sec * 1000000 + timeOutInterval.tv_usec;
-    double sum = pkt_total + timeout_total;
-    double current = current_time->tv_sec * 1000000 + current_time->tv_usec;
-    
-	if (print) {
-		printf("Packet time: %lf microsec\n", pkt_total);
-		printf("Timeout interval: %lf microsec\n", timeout_total);
-		printf("Sum (pkt + timeout): %lf microsec\n", sum);
-		printf("Current time: %lf microsec\n", current);
-		printf("Diferenca (sum - current): %lf microsec\n", sum - current);
-		printf("Tempo de criação do primeiro pacote: %ld.%06ld\n", pkt_time->tv_sec, pkt_time->tv_usec);
-	}
-
-    if(sum < current)
-        return 1;
-    else
-        return 0;
-}
-
 void format_timestamp(double timestamp) {
     time_t rawtime = (time_t)timestamp;
     double fractional = timestamp - (time_t)timestamp;
