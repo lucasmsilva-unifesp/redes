@@ -2,137 +2,137 @@ Client is ready. Reading file and sending to server 127.0.0.1:8080...
   Pacote criado com sucesso:
     Número de sequência: 0
     Tamanho total: 1040 bytes
-    Checksum: 62873
+    Checksum: 5103
 
   Pacote criado com sucesso:
     Número de sequência: 1
     Tamanho total: 1040 bytes
-    Checksum: 65447
+    Checksum: 7676
 
   Pacote criado com sucesso:
     Número de sequência: 2
     Tamanho total: 1040 bytes
-    Checksum: 57829
+    Checksum: 59
 
   Pacote criado com sucesso:
     Número de sequência: 3
     Tamanho total: 1040 bytes
-    Checksum: 26973
+    Checksum: 34737
 
   Pacote criado com sucesso:
     Número de sequência: 4
     Tamanho total: 1040 bytes
-    Checksum: 2695
+    Checksum: 10460
 
   Pacote criado com sucesso:
     Número de sequência: 5
     Tamanho total: 1040 bytes
-    Checksum: 34251
+    Checksum: 42016
 
   Pacote criado com sucesso:
     Número de sequência: 6
     Tamanho total: 1040 bytes
-    Checksum: 26935
+    Checksum: 34706
 
   Pacote criado com sucesso:
     Número de sequência: 7
     Tamanho total: 1040 bytes
-    Checksum: 27348
+    Checksum: 35119
 
   Pacote criado com sucesso:
     Número de sequência: 8
     Tamanho total: 1040 bytes
-    Checksum: 62176
+    Checksum: 4411
 
   Pacote criado com sucesso:
     Número de sequência: 9
     Tamanho total: 1040 bytes
-    Checksum: 59607
+    Checksum: 1842
 
   Pacote criado com sucesso:
     Número de sequência: 10
     Tamanho total: 1040 bytes
-    Checksum: 29021
+    Checksum: 36791
 
   Pacote criado com sucesso:
     Número de sequência: 11
     Tamanho total: 1040 bytes
-    Checksum: 64825
+    Checksum: 7060
 
   Pacote criado com sucesso:
     Número de sequência: 12
     Tamanho total: 1040 bytes
-    Checksum: 9084
+    Checksum: 16853
 
   Pacote criado com sucesso:
     Número de sequência: 13
     Tamanho total: 1040 bytes
-    Checksum: 20418
+    Checksum: 28188
 
   Pacote criado com sucesso:
     Número de sequência: 14
     Tamanho total: 1040 bytes
-    Checksum: 18753
+    Checksum: 26523
 
   Pacote criado com sucesso:
     Número de sequência: 15
     Tamanho total: 1040 bytes
-    Checksum: 34576
+    Checksum: 42346
 
   Pacote criado com sucesso:
     Número de sequência: 16
     Tamanho total: 1040 bytes
-    Checksum: 49128
+    Checksum: 56898
 
   Pacote criado com sucesso:
     Número de sequência: 17
     Tamanho total: 1040 bytes
-    Checksum: 51111
+    Checksum: 58881
 
   Pacote criado com sucesso:
     Número de sequência: 18
     Tamanho total: 1040 bytes
-    Checksum: 47790
+    Checksum: 55559
 
   Pacote criado com sucesso:
     Número de sequência: 19
     Tamanho total: 1040 bytes
-    Checksum: 13330
+    Checksum: 21100
 
   Pacote criado com sucesso:
     Número de sequência: 20
     Tamanho total: 1040 bytes
-    Checksum: 45745
+    Checksum: 53515
 
   Pacote criado com sucesso:
     Número de sequência: 21
     Tamanho total: 1040 bytes
-    Checksum: 41888
+    Checksum: 49658
 
   Pacote criado com sucesso:
     Número de sequência: 22
     Tamanho total: 1040 bytes
-    Checksum: 12399
+    Checksum: 20170
 
   Pacote criado com sucesso:
     Número de sequência: 23
     Tamanho total: 1040 bytes
-    Checksum: 8329
+    Checksum: 16099
 
   Pacote criado com sucesso:
     Número de sequência: 24
     Tamanho total: 1040 bytes
-    Checksum: 16344
+    Checksum: 24114
 
   Pacote criado com sucesso:
     Número de sequência: 25
     Tamanho total: 1040 bytes
-    Checksum: 57500
+    Checksum: 65271
 
   Pacote criado com sucesso:
     Número de sequência: 26
     Tamanho total: 47 bytes
-    Checksum: 50662
+    Checksum: 58432
 
 
 Sending data_pkt: 0 (window position: 0)
@@ -272,40 +272,40 @@ Marked packet 0 as ACKed
 Window advanced: base=1, next=10
 
 No timeout for packet 1.
-  Current time: 1739474294.710818
-  Packet time: 1739474294.710684
+  Current time: 1739474802.178338
+  Packet time: 1739474802.178132
 
 No timeout for packet 2.
-  Current time: 1739474294.710819
-  Packet time: 1739474294.710687
+  Current time: 1739474802.178339
+  Packet time: 1739474802.178134
 
 No timeout for packet 3.
-  Current time: 1739474294.710819
-  Packet time: 1739474294.710688
+  Current time: 1739474802.178339
+  Packet time: 1739474802.178136
 
 No timeout for packet 4.
-  Current time: 1739474294.710819
-  Packet time: 1739474294.710690
+  Current time: 1739474802.178339
+  Packet time: 1739474802.178137
 
 No timeout for packet 5.
-  Current time: 1739474294.710819
-  Packet time: 1739474294.710691
+  Current time: 1739474802.178340
+  Packet time: 1739474802.178138
 
 No timeout for packet 6.
-  Current time: 1739474294.710820
-  Packet time: 1739474294.710700
+  Current time: 1739474802.178340
+  Packet time: 1739474802.178141
 
 No timeout for packet 7.
-  Current time: 1739474294.710820
-  Packet time: 1739474294.710701
+  Current time: 1739474802.178340
+  Packet time: 1739474802.178142
 
 No timeout for packet 8.
-  Current time: 1739474294.710820
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178340
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710820
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178341
+  Packet time: 1739474802.178145
 
 Sending data_pkt: 10 (window position: 0)
   Window status:
@@ -327,40 +327,40 @@ Marked packet 1 as ACKed
 Window advanced: base=2, next=11
 
 No timeout for packet 2.
-  Current time: 1739474294.710825
-  Packet time: 1739474294.710687
+  Current time: 1739474802.178345
+  Packet time: 1739474802.178134
 
 No timeout for packet 3.
-  Current time: 1739474294.710825
-  Packet time: 1739474294.710688
+  Current time: 1739474802.178345
+  Packet time: 1739474802.178136
 
 No timeout for packet 4.
-  Current time: 1739474294.710825
-  Packet time: 1739474294.710690
+  Current time: 1739474802.178346
+  Packet time: 1739474802.178137
 
 No timeout for packet 5.
-  Current time: 1739474294.710825
-  Packet time: 1739474294.710691
+  Current time: 1739474802.178346
+  Packet time: 1739474802.178138
 
 No timeout for packet 6.
-  Current time: 1739474294.710826
-  Packet time: 1739474294.710700
+  Current time: 1739474802.178346
+  Packet time: 1739474802.178141
 
 No timeout for packet 7.
-  Current time: 1739474294.710826
-  Packet time: 1739474294.710701
+  Current time: 1739474802.178346
+  Packet time: 1739474802.178142
 
 No timeout for packet 8.
-  Current time: 1739474294.710826
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178347
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710826
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178347
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710827
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178347
+  Packet time: 1739474802.178148
 
 Sending data_pkt: 11 (window position: 1)
   Window status:
@@ -382,40 +382,40 @@ Marked packet 2 as ACKed
 Window advanced: base=3, next=12
 
 No timeout for packet 3.
-  Current time: 1739474294.710843
-  Packet time: 1739474294.710688
+  Current time: 1739474802.178351
+  Packet time: 1739474802.178136
 
 No timeout for packet 4.
-  Current time: 1739474294.710843
-  Packet time: 1739474294.710690
+  Current time: 1739474802.178351
+  Packet time: 1739474802.178137
 
 No timeout for packet 5.
-  Current time: 1739474294.710850
-  Packet time: 1739474294.710691
+  Current time: 1739474802.178357
+  Packet time: 1739474802.178138
 
 No timeout for packet 6.
-  Current time: 1739474294.710851
-  Packet time: 1739474294.710700
+  Current time: 1739474802.178357
+  Packet time: 1739474802.178141
 
 No timeout for packet 7.
-  Current time: 1739474294.710851
-  Packet time: 1739474294.710701
+  Current time: 1739474802.178357
+  Packet time: 1739474802.178142
 
 No timeout for packet 8.
-  Current time: 1739474294.710851
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178357
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710851
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178358
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710852
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178358
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710852
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178358
+  Packet time: 1739474802.178149
 
 Sending data_pkt: 12 (window position: 2)
   Window status:
@@ -437,40 +437,40 @@ Marked packet 3 as ACKed
 Window advanced: base=4, next=13
 
 No timeout for packet 4.
-  Current time: 1739474294.710856
-  Packet time: 1739474294.710690
+  Current time: 1739474802.178364
+  Packet time: 1739474802.178137
 
 No timeout for packet 5.
-  Current time: 1739474294.710856
-  Packet time: 1739474294.710691
+  Current time: 1739474802.178364
+  Packet time: 1739474802.178138
 
 No timeout for packet 6.
-  Current time: 1739474294.710857
-  Packet time: 1739474294.710700
+  Current time: 1739474802.178364
+  Packet time: 1739474802.178141
 
 No timeout for packet 7.
-  Current time: 1739474294.710857
-  Packet time: 1739474294.710701
+  Current time: 1739474802.178365
+  Packet time: 1739474802.178142
 
 No timeout for packet 8.
-  Current time: 1739474294.710857
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178365
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710857
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178366
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710858
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178366
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710858
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178366
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710858
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178367
+  Packet time: 1739474802.178151
 
 Sending data_pkt: 13 (window position: 3)
   Window status:
@@ -492,40 +492,40 @@ Marked packet 4 as ACKed
 Window advanced: base=5, next=14
 
 No timeout for packet 5.
-  Current time: 1739474294.710862
-  Packet time: 1739474294.710691
+  Current time: 1739474802.178372
+  Packet time: 1739474802.178138
 
 No timeout for packet 6.
-  Current time: 1739474294.710862
-  Packet time: 1739474294.710700
+  Current time: 1739474802.178373
+  Packet time: 1739474802.178141
 
 No timeout for packet 7.
-  Current time: 1739474294.710862
-  Packet time: 1739474294.710701
+  Current time: 1739474802.178373
+  Packet time: 1739474802.178142
 
 No timeout for packet 8.
-  Current time: 1739474294.710863
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178374
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710863
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178374
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710863
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178374
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710863
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178375
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710864
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178375
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710864
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178376
+  Packet time: 1739474802.178152
 
 Sending data_pkt: 14 (window position: 4)
   Window status:
@@ -547,40 +547,40 @@ Marked packet 5 as ACKed
 Window advanced: base=6, next=15
 
 No timeout for packet 6.
-  Current time: 1739474294.710868
-  Packet time: 1739474294.710700
+  Current time: 1739474802.178382
+  Packet time: 1739474802.178141
 
 No timeout for packet 7.
-  Current time: 1739474294.710868
-  Packet time: 1739474294.710701
+  Current time: 1739474802.178383
+  Packet time: 1739474802.178142
 
 No timeout for packet 8.
-  Current time: 1739474294.710868
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178384
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710868
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178385
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710869
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178385
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710869
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178385
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710873
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178389
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710873
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178389
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710873
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178389
+  Packet time: 1739474802.178155
 
 Sending data_pkt: 15 (window position: 5)
   Window status:
@@ -602,40 +602,40 @@ Marked packet 6 as ACKed
 Window advanced: base=7, next=16
 
 No timeout for packet 7.
-  Current time: 1739474294.710877
-  Packet time: 1739474294.710701
+  Current time: 1739474802.178394
+  Packet time: 1739474802.178142
 
 No timeout for packet 8.
-  Current time: 1739474294.710877
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178395
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710878
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178395
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710878
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178396
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710878
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178396
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710879
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178396
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710879
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178397
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710879
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178397
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710879
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178397
+  Packet time: 1739474802.178157
 
 Sending data_pkt: 16 (window position: 6)
   Window status:
@@ -657,40 +657,40 @@ Marked packet 7 as ACKed
 Window advanced: base=8, next=17
 
 No timeout for packet 8.
-  Current time: 1739474294.710883
-  Packet time: 1739474294.710702
+  Current time: 1739474802.178404
+  Packet time: 1739474802.178144
 
 No timeout for packet 9.
-  Current time: 1739474294.710883
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178404
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710884
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178405
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710884
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178405
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710884
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178405
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710884
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178405
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710885
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178406
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710885
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178406
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710885
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178406
+  Packet time: 1739474802.178158
 
 Sending data_pkt: 17 (window position: 7)
   Window status:
@@ -712,40 +712,40 @@ Marked packet 8 as ACKed
 Window advanced: base=9, next=18
 
 No timeout for packet 9.
-  Current time: 1739474294.710889
-  Packet time: 1739474294.710703
+  Current time: 1739474802.178410
+  Packet time: 1739474802.178145
 
 No timeout for packet 10.
-  Current time: 1739474294.710889
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178410
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710889
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178411
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710890
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178411
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710890
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178411
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710890
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178411
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710890
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178412
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710891
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178412
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710891
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178412
+  Packet time: 1739474802.178159
 
 Sending data_pkt: 18 (window position: 8)
   Window status:
@@ -767,40 +767,40 @@ Marked packet 9 as ACKed
 Window advanced: base=10, next=19
 
 No timeout for packet 10.
-  Current time: 1739474294.710898
-  Packet time: 1739474294.710706
+  Current time: 1739474802.178419
+  Packet time: 1739474802.178148
 
 No timeout for packet 11.
-  Current time: 1739474294.710899
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178419
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710899
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178420
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710899
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178420
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710899
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178420
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710900
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178421
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710900
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178421
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710900
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178421
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710900
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178421
+  Packet time: 1739474802.178162
 
 Sending data_pkt: 19 (window position: 9)
   Window status:
@@ -822,40 +822,40 @@ Marked packet 10 as ACKed
 Window advanced: base=11, next=20
 
 No timeout for packet 11.
-  Current time: 1739474294.710904
-  Packet time: 1739474294.710707
+  Current time: 1739474802.178426
+  Packet time: 1739474802.178149
 
 No timeout for packet 12.
-  Current time: 1739474294.710904
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178426
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710905
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178426
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710905
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178427
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710905
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178427
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710905
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178427
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710906
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178427
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710906
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178427
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710906
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178428
+  Packet time: 1739474802.178163
 
 Sending data_pkt: 20 (window position: 0)
   Window status:
@@ -877,40 +877,40 @@ Marked packet 11 as ACKed
 Window advanced: base=12, next=21
 
 No timeout for packet 12.
-  Current time: 1739474294.710910
-  Packet time: 1739474294.710708
+  Current time: 1739474802.178431
+  Packet time: 1739474802.178151
 
 No timeout for packet 13.
-  Current time: 1739474294.710910
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178432
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710911
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178432
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710911
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178432
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710911
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178432
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710912
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178433
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710912
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178433
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710912
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178433
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710912
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178433
+  Packet time: 1739474802.178164
 
 Sending data_pkt: 21 (window position: 1)
   Window status:
@@ -932,40 +932,40 @@ Marked packet 12 as ACKed
 Window advanced: base=13, next=22
 
 No timeout for packet 13.
-  Current time: 1739474294.710919
-  Packet time: 1739474294.710710
+  Current time: 1739474802.178440
+  Packet time: 1739474802.178152
 
 No timeout for packet 14.
-  Current time: 1739474294.710919
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178440
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710919
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178440
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710920
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178441
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710920
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178441
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710920
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178441
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710920
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178442
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710921
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178442
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710921
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178442
+  Packet time: 1739474802.178166
 
 Sending data_pkt: 22 (window position: 2)
   Window status:
@@ -987,40 +987,40 @@ Marked packet 13 as ACKed
 Window advanced: base=14, next=23
 
 No timeout for packet 14.
-  Current time: 1739474294.710925
-  Packet time: 1739474294.710713
+  Current time: 1739474802.178446
+  Packet time: 1739474802.178155
 
 No timeout for packet 15.
-  Current time: 1739474294.710925
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178446
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710925
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178447
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710926
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178447
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710926
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178447
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710926
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178447
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710927
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178448
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710927
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178448
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710927
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178448
+  Packet time: 1739474802.178168
 
 Sending data_pkt: 23 (window position: 3)
   Window status:
@@ -1042,40 +1042,40 @@ Marked packet 14 as ACKed
 Window advanced: base=15, next=24
 
 No timeout for packet 15.
-  Current time: 1739474294.710931
-  Packet time: 1739474294.710715
+  Current time: 1739474802.178452
+  Packet time: 1739474802.178157
 
 No timeout for packet 16.
-  Current time: 1739474294.710931
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178452
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710931
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178452
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710932
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178453
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710932
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178453
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710932
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178453
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710932
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178453
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710933
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178454
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710933
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178454
+  Packet time: 1739474802.178170
 
 Sending data_pkt: 24 (window position: 4)
   Window status:
@@ -1097,40 +1097,40 @@ Marked packet 15 as ACKed
 Window advanced: base=16, next=25
 
 No timeout for packet 16.
-  Current time: 1739474294.710937
-  Packet time: 1739474294.710716
+  Current time: 1739474802.178458
+  Packet time: 1739474802.178158
 
 No timeout for packet 17.
-  Current time: 1739474294.710937
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178458
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710937
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178459
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710940
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178462
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710941
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178462
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710941
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178462
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710941
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178462
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710941
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178463
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710942
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178463
+  Packet time: 1739474802.178171
 
 Sending data_pkt: 25 (window position: 5)
   Window status:
@@ -1152,40 +1152,40 @@ Marked packet 16 as ACKed
 Window advanced: base=17, next=26
 
 No timeout for packet 17.
-  Current time: 1739474294.710946
-  Packet time: 1739474294.710717
+  Current time: 1739474802.178467
+  Packet time: 1739474802.178159
 
 No timeout for packet 18.
-  Current time: 1739474294.710946
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178467
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710946
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178468
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710946
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178468
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710947
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178468
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710947
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178468
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710947
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178469
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710947
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178469
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710948
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178469
+  Packet time: 1739474802.178172
 
 Sending data_pkt: 26 (window position: 6)
   Window status:
@@ -1207,40 +1207,40 @@ Marked packet 17 as ACKed
 Window advanced: base=18, next=27
 
 No timeout for packet 18.
-  Current time: 1739474294.710952
-  Packet time: 1739474294.710719
+  Current time: 1739474802.178473
+  Packet time: 1739474802.178162
 
 No timeout for packet 19.
-  Current time: 1739474294.710952
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178473
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710952
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178473
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710952
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178474
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710952
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178474
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710953
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178474
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710953
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178474
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710953
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178475
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710953
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178475
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 18
 ACK não foi corrompido
@@ -1249,36 +1249,36 @@ Marked packet 18 as ACKed
 Window advanced: base=19, next=27
 
 No timeout for packet 19.
-  Current time: 1739474294.710955
-  Packet time: 1739474294.710721
+  Current time: 1739474802.178476
+  Packet time: 1739474802.178163
 
 No timeout for packet 20.
-  Current time: 1739474294.710955
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178477
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710955
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178477
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710956
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178477
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710956
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178477
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710956
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178478
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710956
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178478
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710957
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178478
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 19
 ACK não foi corrompido
@@ -1287,32 +1287,32 @@ Marked packet 19 as ACKed
 Window advanced: base=20, next=27
 
 No timeout for packet 20.
-  Current time: 1739474294.710961
-  Packet time: 1739474294.710722
+  Current time: 1739474802.178482
+  Packet time: 1739474802.178164
 
 No timeout for packet 21.
-  Current time: 1739474294.710961
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178483
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710962
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178483
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710962
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178483
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710962
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178483
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710962
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178484
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710963
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178484
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 20
 ACK não foi corrompido
@@ -1321,28 +1321,28 @@ Marked packet 20 as ACKed
 Window advanced: base=21, next=27
 
 No timeout for packet 21.
-  Current time: 1739474294.710964
-  Packet time: 1739474294.710724
+  Current time: 1739474802.178486
+  Packet time: 1739474802.178166
 
 No timeout for packet 22.
-  Current time: 1739474294.710965
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178486
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710965
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178486
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710965
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178486
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710965
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178487
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710966
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178487
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 21
 ACK não foi corrompido
@@ -1351,24 +1351,24 @@ Marked packet 21 as ACKed
 Window advanced: base=22, next=27
 
 No timeout for packet 22.
-  Current time: 1739474294.710967
-  Packet time: 1739474294.710727
+  Current time: 1739474802.178535
+  Packet time: 1739474802.178168
 
 No timeout for packet 23.
-  Current time: 1739474294.710967
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178535
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710968
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178535
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710968
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178536
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710968
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178536
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 22
 ACK não foi corrompido
@@ -1377,20 +1377,20 @@ Marked packet 22 as ACKed
 Window advanced: base=23, next=27
 
 No timeout for packet 23.
-  Current time: 1739474294.710970
-  Packet time: 1739474294.710728
+  Current time: 1739474802.178538
+  Packet time: 1739474802.178170
 
 No timeout for packet 24.
-  Current time: 1739474294.710970
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178538
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710970
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178539
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710970
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178539
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 23
 ACK não foi corrompido
@@ -1399,16 +1399,16 @@ Marked packet 23 as ACKed
 Window advanced: base=24, next=27
 
 No timeout for packet 24.
-  Current time: 1739474294.710972
-  Packet time: 1739474294.710729
+  Current time: 1739474802.178540
+  Packet time: 1739474802.178171
 
 No timeout for packet 25.
-  Current time: 1739474294.710972
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178541
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710972
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178541
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 24
 ACK não foi corrompido
@@ -1417,12 +1417,12 @@ Marked packet 24 as ACKed
 Window advanced: base=25, next=27
 
 No timeout for packet 25.
-  Current time: 1739474294.710974
-  Packet time: 1739474294.710731
+  Current time: 1739474802.178542
+  Packet time: 1739474802.178172
 
 No timeout for packet 26.
-  Current time: 1739474294.710974
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178542
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 25
 ACK não foi corrompido
@@ -1431,8 +1431,8 @@ Marked packet 25 as ACKed
 Window advanced: base=26, next=27
 
 No timeout for packet 26.
-  Current time: 1739474294.710976
-  Packet time: 1739474294.710732
+  Current time: 1739474802.178692
+  Packet time: 1739474802.178174
 
 Received ACK for packet: 26
 ACK não foi corrompido

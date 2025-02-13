@@ -74,5 +74,6 @@ chunks_info divide_file_to_chunks(int buf_len, void *buf);
 
 void handle_error(const char *message);
 void set_window();
+int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time);
 
 #endif
