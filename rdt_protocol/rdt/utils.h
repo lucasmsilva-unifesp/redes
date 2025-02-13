@@ -17,4 +17,10 @@ void process_ack(packet ack_pkt);
 
 void format_timestamp(double timestamp);
 
+int timeval_compare(struct timeval *pkt_time, struct timeval *current_time, int print);
+
+int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time);
+
+chunks_info divide_file_to_chunks(int buf_len, void *buf);
+
 #endif

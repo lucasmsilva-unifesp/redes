@@ -75,3 +75,59 @@ void format_timestamp(double timestamp) {
     snprintf(final_buf, sizeof(final_buf), "%s.%03.0f", buf, msec);
     printf("%s\n", final_buf);
 }
+
+int timeval_compare(struct timeval *pkt_time, struct timeval *current_time, int print) {
+    double pkt_total = pkt_time->tv_sec * 1000000 + pkt_time->tv_usec;
+    double timeout_total = timeOutInterval.tv_sec * 1000000 + timeOutInterval.tv_usec;
+    double sum = pkt_total + timeout_total;
+    double current = current_time->tv_sec * 1000000 + current_time->tv_usec;
+    
+	if (print) {
+		printf("Packet time: %lf microsec\n", pkt_total);
+		printf("Timeout interval: %lf microsec\n", timeout_total);
+		printf("Sum (pkt + timeout): %lf microsec\n", sum);
+		printf("Current time: %lf microsec\n", current);
+		printf("Diferenca (sum - current): %lf microsec\n", sum - current);
+		printf("Tempo de criação do primeiro pacote: %ld.%06ld\n", pkt_time->tv_sec, pkt_time->tv_usec);
+	}
+
+    if(sum < current)
+        return 1;
+    else
+        return 0;
+}
+
+chunks_info divide_file_to_chunks(int buf_len, void *buf) {
+	int total_packets = (buf_len + MAX_MSG_LEN - 1) / MAX_MSG_LEN;
+    
+    packet *packets = (packet *)malloc(total_packets * sizeof(packet));
+    if (packets == NULL) {
+        handle_error("rdt_send: malloc failed");
+    }
+
+	for (int i = 0; i < total_packets; i++) {
+        int chunk_size;
+        
+        if (i == total_packets - 1) {
+            chunk_size = buf_len - (i * MAX_MSG_LEN);
+        } else {
+            chunk_size = MAX_MSG_LEN;
+        }
+        
+        if (make_pkt(&packets[i], PKT_DATA, _snd_seqnum + i, buf + (i * MAX_MSG_LEN), chunk_size, NULL) < 0) {
+            free(packets);
+            handle_error("rdt_send: make_pkt failed");
+        }
+
+		printf("  Pacote criado com sucesso:\n");
+        printf("    Número de sequência: %d\n", packets[i].header.pkt_seq_num);
+        printf("    Tamanho total: %d bytes\n", packets[i].header.pkt_size);
+        printf("    Checksum: %d\n", packets[i].header.pkt_checksum);
+        printf("\n");
+    }
+
+    chunks_info result;
+    result.total_packets = total_packets;
+    result.packets = packets;
+    return result;
+}

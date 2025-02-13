@@ -11,28 +11,12 @@ hseq_t next_seq_num = 0;
 int packets_sent = 0;
 
 double estimatedRTT = 0.0, devRTT = 0.0;
-struct timeval timeOutInterval = {1, 0};
+struct timeval timeOutInterval = {0, 500000};
 
 hseq_t _snd_seqnum = 0;
 hseq_t _rcv_seqnum = 0;
 
 packet *recv_window[WINDOW_SIZE];
-
-int flag2 = 1;
-int flag = 1;
-
-void sleep_for_timeout() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    
-    // Use microseconds for more unique seed
-    srand(tv.tv_sec * 1000000 + tv.tv_usec);
-    
-    int sleep_time = rand() % 4; 
-    printf("Sleeping for %d seconds...\n", sleep_time);
-    
-    sleep(sleep_time);
-}
 
 void set_window() {
 	for (int i = 0; i < WINDOW_SIZE; i++) {
@@ -88,7 +72,6 @@ static void verify_acks(int sockfd, packet** sliding_window) {
 				double sampleRTT = (current_time.tv_sec + current_time.tv_usec/1e6) - 
 					(ack_pkt.header.pkt_time.tv_sec + ack_pkt.header.pkt_time.tv_usec/1e6);
 
-				// sleep_for_timeout();
 				timeout_interval(sampleRTT);
 
 			}
@@ -98,28 +81,7 @@ static void verify_acks(int sockfd, packet** sliding_window) {
 	}
 }
 
-static int timeval_compare(struct timeval *pkt_time, struct timeval *current_time, int print) {
-    double pkt_total = pkt_time->tv_sec * 1000000 + pkt_time->tv_usec;
-    double timeout_total = timeOutInterval.tv_sec * 1000000 + timeOutInterval.tv_usec;
-    double sum = pkt_total + timeout_total;
-    double current = current_time->tv_sec * 1000000 + current_time->tv_usec;
-    
-	if (print) {
-		printf("Packet time: %lf microsec\n", pkt_total);
-		printf("Timeout interval: %lf microsec\n", timeout_total);
-		printf("Sum (pkt + timeout): %lf microsec\n", sum);
-		printf("Current time: %lf microsec\n", current);
-		printf("Diferenca (sum - current): %lf microsec\n", sum - current);
-		printf("Tempo de criação do primeiro pacote: %ld.%06ld\n", pkt_time->tv_sec, pkt_time->tv_usec);
-	}
-
-    if(sum < current)
-        return 1;
-    else
-        return 0;
-}
-
-static int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
+int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
 	struct timeval time_start;
 
 	if (msg_len > MAX_MSG_LEN) {
@@ -170,18 +132,6 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
                _snd_seqnum, _snd_seqnum % WINDOW_SIZE);
         
 			sliding_window[_snd_seqnum % WINDOW_SIZE] = &packets[_snd_seqnum];
-
-			if (flag == 1 && _snd_seqnum == 3 ) {
-				flag = 0;
-				_snd_seqnum++;
-				continue;
-			}
-
-			if (flag2 == 1 && _snd_seqnum == 5 ) {
-				flag2 = 0;
-				_snd_seqnum++;
-				continue;
-			}
 			
 			ns = sendto(sockfd, sliding_window[_snd_seqnum % WINDOW_SIZE], 
 					sliding_window[_snd_seqnum % WINDOW_SIZE]->header.pkt_size, 0,
@@ -276,41 +226,6 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	}
 
 	return buf_len;
-}
-
-chunks_info divide_file_to_chunks(int buf_len, void *buf) {
-	int total_packets = (buf_len + MAX_MSG_LEN - 1) / MAX_MSG_LEN;
-    
-    packet *packets = (packet *)malloc(total_packets * sizeof(packet));
-    if (packets == NULL) {
-        handle_error("rdt_send: malloc failed");
-    }
-
-	for (int i = 0; i < total_packets; i++) {
-        int chunk_size;
-        
-        if (i == total_packets - 1) {
-            chunk_size = buf_len - (i * MAX_MSG_LEN);
-        } else {
-            chunk_size = MAX_MSG_LEN;
-        }
-        
-        if (make_pkt(&packets[i], PKT_DATA, _snd_seqnum + i, buf + (i * MAX_MSG_LEN), chunk_size, NULL) < 0) {
-            free(packets);
-            handle_error("rdt_send: make_pkt failed");
-        }
-
-		printf("  Pacote criado com sucesso:\n");
-        printf("    Número de sequência: %d\n", packets[i].header.pkt_seq_num);
-        printf("    Tamanho total: %d bytes\n", packets[i].header.pkt_size);
-        printf("    Checksum: %d\n", packets[i].header.pkt_checksum);
-        printf("\n");
-    }
-
-    chunks_info result;
-    result.total_packets = total_packets;
-    result.packets = packets;
-    return result;
 }
 
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
