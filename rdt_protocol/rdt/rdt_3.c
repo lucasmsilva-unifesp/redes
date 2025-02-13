@@ -304,8 +304,6 @@ chunks_info divide_file_to_chunks(int buf_len, void *buf) {
 }
 
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
-    int total_received = 0;
-
     while (1) {
         fd_set readfds;
         packet data, ack;
@@ -369,7 +367,7 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
             while (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
                 int msg_size = recv_window[_rcv_seqnum % WINDOW_SIZE]->header.pkt_size - sizeof(header);
                 
-                if (total_received + msg_size > buf_len) {
+                if (msg_size > buf_len) {
                     handle_error("rdt_recv: buffer receive overflow");
                 }
 
@@ -377,8 +375,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
                        recv_window[_rcv_seqnum % WINDOW_SIZE]->payload, 
                        msg_size);
                 
-                total_received += msg_size;
-
                 free(recv_window[_rcv_seqnum % WINDOW_SIZE]);
                 recv_window[_rcv_seqnum % WINDOW_SIZE] = NULL;
 
@@ -393,5 +389,5 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 		break;
     }
 
-    return total_received;
+    return buf_len;
 }
