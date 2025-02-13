@@ -77,8 +77,17 @@ static void verify_acks(int sockfd, packet** sliding_window) {
 			if (ack_seq >= snd_base && ack_seq < _snd_seqnum) {
 				sliding_window[ack_seq % WINDOW_SIZE]->header.pkt_acked = 1;
 				printf("Marked packet %d as ACKed\n", ack_seq);
+				
+				// Atualiza estimativas de RTT se necessário
+				struct timeval current_time;
+				gettimeofday(&current_time, NULL);
 
-				sleep_for_timeout();
+				double sampleRTT = (current_time.tv_sec + current_time.tv_usec/1e6) - 
+					(ack_pkt.header.pkt_time.tv_sec + ack_pkt.header.pkt_time.tv_usec/1e6);
+
+				// sleep_for_timeout();
+				timeout_interval(sampleRTT);
+
 			}
 		} else {
 			printf("Received corrupted ACK\n");
