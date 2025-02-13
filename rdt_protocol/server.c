@@ -42,6 +42,7 @@ void server(int port) {
             printf("Server: rdt_recv() failed || packet corrupted\n");
             continue;
         }
+        // [1,1,4,1,1,1,0,0,0] Se pkt tiver ack, 
 
         size_t bytes_wrote = fwrite(buffer, 1, msg_len, file);
 

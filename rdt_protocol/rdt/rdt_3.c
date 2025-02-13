@@ -18,6 +18,7 @@ hseq_t _rcv_seqnum = 0;
 
 packet *recv_window[WINDOW_SIZE];
 
+int flag2 = 1;
 int flag = 1;
 
 void sleep_for_timeout() {
@@ -170,8 +171,14 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
         
 			sliding_window[_snd_seqnum % WINDOW_SIZE] = &packets[_snd_seqnum];
 
-			if (flag == 1 && _snd_seqnum == 3) {
+			if (flag == 1 && _snd_seqnum == 3 ) {
 				flag = 0;
+				_snd_seqnum++;
+				continue;
+			}
+
+			if (flag2 == 1 && _snd_seqnum == 5 ) {
+				flag2 = 0;
 				_snd_seqnum++;
 				continue;
 			}
@@ -314,6 +321,31 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
         packet data, ack;
         int addrLen = sizeof(struct sockaddr_in);
 
+		// Loop para verificar o caso em que há um conteúdo no buff de recebimento.
+		if (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
+			int msg_size = recv_window[_rcv_seqnum % WINDOW_SIZE]->header.pkt_size - sizeof(header);
+			
+			if (msg_size > buf_len) {
+				handle_error("rdt_recv: buffer receive overflow");
+			}
+
+			memcpy(buf, 
+					recv_window[_rcv_seqnum % WINDOW_SIZE]->payload, 
+					msg_size);
+
+			total_received = msg_size;
+			
+			free(recv_window[_rcv_seqnum % WINDOW_SIZE]);
+			recv_window[_rcv_seqnum % WINDOW_SIZE] = NULL;
+
+			if (DEBUG) {
+				printf("rdt_recv: Buffer filled with size=%d and index=%d\n", msg_size, _rcv_seqnum % WINDOW_SIZE);
+			}
+
+			_rcv_seqnum++;
+			break;
+		}
+
         FD_ZERO(&readfds);
         FD_SET(sockfd, &readfds);
 
@@ -350,11 +382,13 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
             continue;
         }
 
+		// Verifica se o pkt está dentro da janela de recebimento
         if (data.header.pkt_seq_num >= _rcv_seqnum && 
             data.header.pkt_seq_num < _rcv_seqnum + WINDOW_SIZE) {
             
             int window_index = data.header.pkt_seq_num % WINDOW_SIZE;
             
+			// Caso em que não existe conteúdo no atual índice da janela. Acontece no início e a cada transmissão sucedida, já que após receber o pacote.
             if (recv_window[window_index] == NULL) {
                 recv_window[window_index] = malloc(sizeof(packet));
                 memcpy(recv_window[window_index], &data, sizeof(packet));
@@ -369,7 +403,8 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 				}
             }
 
-            while (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
+			// Loop para verificar o caso em que há um conteúdo no buff de recebimento.
+            if (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
                 int msg_size = recv_window[_rcv_seqnum % WINDOW_SIZE]->header.pkt_size - sizeof(header);
                 
                 if (msg_size > buf_len) {
