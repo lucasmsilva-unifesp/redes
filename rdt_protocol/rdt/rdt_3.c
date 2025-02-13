@@ -11,12 +11,14 @@ hseq_t next_seq_num = 0;
 int packets_sent = 0;
 
 double estimatedRTT = 0.0, devRTT = 0.0;
-struct timeval timeOutInterval = {2, 0};
+struct timeval timeOutInterval = {1, 0};
 
 hseq_t _snd_seqnum = 0;
 hseq_t _rcv_seqnum = 0;
 
 packet *recv_window[WINDOW_SIZE];
+
+int flag = 1;
 
 void sleep_for_timeout() {
     struct timeval tv;
@@ -167,6 +169,12 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
                _snd_seqnum, _snd_seqnum % WINDOW_SIZE);
         
 			sliding_window[_snd_seqnum % WINDOW_SIZE] = &packets[_snd_seqnum];
+
+			if (flag == 1 && _snd_seqnum == 3) {
+				flag = 0;
+				_snd_seqnum++;
+				continue;
+			}
 			
 			ns = sendto(sockfd, sliding_window[_snd_seqnum % WINDOW_SIZE], 
 					sliding_window[_snd_seqnum % WINDOW_SIZE]->header.pkt_size, 0,
@@ -196,15 +204,10 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			_snd_seqnum++;
 		}
 
-		// struct timeval carlos;
-		// gettimeofday(&carlos, NULL);
-
-		// timeval_compare(&sliding_window[0]->header.pkt_time, &carlos, TRUE);
-
 		verify_acks(sockfd, sliding_window);
 
-		// // Verifica se o pacote já foi reconhecido, possuiu um ACK
-		// // Avança janela
+		// Verifica se o pacote já foi reconhecido, possuiu um ACK
+		// Avança janela
 		while (snd_base < _snd_seqnum && 
 			sliding_window[snd_base % WINDOW_SIZE]->header.pkt_acked) {
 
@@ -215,7 +218,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			printf("\nWindow advanced: base=%d, next=%d\n", snd_base, _snd_seqnum);
 		}
 
-		// // Verifica se houve timeout
+		// Verifica se houve timeout
 		struct timeval current_time;	
 		
 		for (int i = snd_base; i < _snd_seqnum; i++) {
@@ -304,6 +307,8 @@ chunks_info divide_file_to_chunks(int buf_len, void *buf) {
 }
 
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
+	int total_received = 0;
+
     while (1) {
         fd_set readfds;
         packet data, ack;
@@ -374,6 +379,8 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
                 memcpy(buf, 
                        recv_window[_rcv_seqnum % WINDOW_SIZE]->payload, 
                        msg_size);
+
+				total_received = msg_size;
                 
                 free(recv_window[_rcv_seqnum % WINDOW_SIZE]);
                 recv_window[_rcv_seqnum % WINDOW_SIZE] = NULL;
@@ -389,5 +396,5 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 		break;
     }
 
-    return buf_len;
+    return total_received;
 }
