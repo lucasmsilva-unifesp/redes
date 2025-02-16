@@ -33,6 +33,7 @@ static void verify_acks(int sockfd, packet_list *pkt_list) {
 	packet ack_pkt;
 	struct sockaddr_in ack_addr;
 	int addr_len = sizeof(ack_addr);
+	printf("Ready\n");
 
 	// Configura o select
 	FD_ZERO(&readfds);
@@ -56,54 +57,51 @@ static void verify_acks(int sockfd, packet_list *pkt_list) {
 			handle_error("rdt_send: recvfrom(ACK)");
 		}
 		
-		printf("\nReceived ACK for packet: %d\n", ack_pkt.header.pkt_seq_num);
+		if (DEBUG)
+			printf("\nReceived ACK for packet: %d\n", ack_pkt.header.pkt_seq_num);
 		
-		// Verifica se o ACK não está corrompido
 		if (!is_corrupted(&ack_pkt)) {
-			printf("ACK não foi corrompido\n");
-			// Encontra o pacote na janela e marca como confirmado
-			int ack_seq = ack_pkt.header.pkt_seq_num;
-			if (ack_seq >= snd_base && ack_seq < _snd_seqnum) {
-				packet_item *aux;
-				aux = pkt_list->head;
-
-				while (aux->packet->header.pkt_seq_num != ack_seq) {
+			int ack_seq_num = ack_pkt.header.pkt_seq_num;
+			if (ack_seq_num >= snd_base && ack_seq_num < _snd_seqnum) {
+				packet_item *aux = pkt_list->head;
+				while (aux->packet->header.pkt_seq_num != ack_seq_num) {
 					aux = aux->next;
 				}
-
-				aux->packet->header.pkt_acked = 1;
-
-				printf("Marked packet %d as ACKed\n", ack_seq);
 				
-				// Atualiza estimativas de RTT se necessário
+				aux->packet->header.pkt_acked = TRUE;
+
 				struct timeval current_time;
 				gettimeofday(&current_time, NULL);
-
-				double sampleRTT = (current_time.tv_sec + current_time.tv_usec/1e6) - 
-					(ack_pkt.header.pkt_time.tv_sec + ack_pkt.header.pkt_time.tv_usec/1e6);
-
+				
+				double sampleRTT = (current_time.tv_sec + current_time.tv_usec / 1e6) - 
+				(ack_pkt.header.pkt_time.tv_sec - ack_pkt.header.pkt_time.tv_usec / 1e6);
+				
 				timeout_interval(sampleRTT);
 
+				if (DEBUG)
+					printf("Marked packet %d as acked\n", ack_seq_num);
+			} else if (DEBUG) {
+				printf("Packet %d is not in the window\n", ack_seq_num);
 			}
-		} else {
-			printf("Received corrupted ACK\n");
-
-			windows_size = BEGIN_WINDOW_SIZE;
-			_snd_seqnum = snd_base;
-
-			packet_item *aux, *aux2;
-			aux = pkt_list->head->next;
-
-			while (aux != NULL) {
-				aux2 = aux->next;
-				free(aux->packet);
-				free(aux);
-				aux = aux2;
-			}
-
-			printf("Resetting window size to %d\n", windows_size);
-
 		}
+	} else {
+		if (DEBUG)
+			printf("Timeout for packet: %d\n", pkt_list->head->packet->header.pkt_seq_num);
+
+		windows_size = BEGIN_WINDOW_SIZE;
+		_snd_seqnum = snd_base;
+
+		packet_item *aux = pkt_list->head, *aux2;
+
+		while (aux != NULL) {
+			aux2 = aux->next;
+			free(aux);
+			aux = aux2;
+		}
+
+		pkt_list->size = 0;
+		
+		printf("Resetting window size to %d\n", windows_size);
 	}
 }
 
@@ -145,138 +143,94 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	
 	packet_list *pkt_list = (packet_list *)malloc(sizeof(packet_list));
 	pkt_list->head = (packet_item *)malloc(sizeof(packet_item));
-	pkt_list->head->packet = &packets[_snd_seqnum];
-	pkt_list->head->seq_num = _snd_seqnum;
 	pkt_list->head->next = NULL;
-	pkt_list->size = 1;
-
-	_snd_seqnum++;
+	pkt_list->size = 0;
 
 	packet_item *aux;
 
 	while (packets_sent < total_packets) {
-
-		// Envia pacotes enquanto houver espaço na janela
-		while (_snd_seqnum < total_packets && 
-           _snd_seqnum < snd_base + windows_size) {
-
+		while (_snd_seqnum < snd_base + windows_size &&
+			_snd_seqnum < total_packets) {
 			printf("\nSending data_pkt: %d (window position: %d)\n", 
-               _snd_seqnum, _snd_seqnum % WINDOW_SIZE);
-        
-			aux = pkt_list->head;
-			while (aux->next != NULL) {
-				aux = aux->next;
-			}
+				_snd_seqnum, _snd_seqnum % windows_size);
 
-			aux->next = (packet_item *)malloc(sizeof(packet_item));
-			aux->next->packet = &packets[_snd_seqnum];
-			aux->next->seq_num = _snd_seqnum;
-			aux->next->next = NULL;
-			pkt_list->size++;
-			
-			ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
-					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
+			if (pkt_list->size == 0) {
+				pkt_list->head = (packet_item *)malloc(sizeof(packet_item));
+				pkt_list->head->next = NULL;
+				pkt_list->size = 1;
 
-			if (ns < 0) {
-				handle_error("rdt_send: sendto(PKT_DATA):");
-			}
-			
-			// Apenas para verificar o status dos pacotes na janela
-			if(DEBUG){
-				printf("  Window status:\n");
+				pkt_list->head->packet = &packets[_snd_seqnum];
+				pkt_list->head->seq_num = _snd_seqnum;
 
+				if ((rand() % 2)) {
+					ns = sendto(sockfd, pkt_list->head->packet, pkt_list->head->packet->header.pkt_size , 0,
+						(struct sockaddr *)dest, sizeof(struct sockaddr_in));
+	
+					if (ns < 0) {
+						handle_error("rdt_send: sendto(PKT_DATA):");
+					}
+				}
+			} else {
 				aux = pkt_list->head;
-				for (int i = 0; i < windows_size; i++) {
-					printf("  [%d]: seq=%d\n", i, aux->seq_num);
-					
-					if (aux->packet->header.pkt_acked)
-						printf("(ACKed)\n");
-					else
-						printf("(waiting)\n");
-					
+				while (aux->next != NULL)	{
 					aux = aux->next;
 				}
+				aux->next = (packet_item *)malloc(sizeof(packet_item));
+				aux->next->next = NULL;
+				aux->next->packet = &packets[_snd_seqnum];
+				aux->next->seq_num = _snd_seqnum;
+				pkt_list->size++;
+
+				ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
+					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
+
+				if (ns < 0) {
+					handle_error("rdt_send: sendto(PKT_DATA):");
+				}
 			}
-			
+
 			_snd_seqnum++;
 		}
+		
+		if(DEBUG){
+			printf("  Window status:\n");
 
+			aux = pkt_list->head;
+			int i = 0;
+			while (aux != NULL) {
+				printf("  [%d]: seq=%d ", i++, aux->seq_num);
+				
+				if (aux->packet->header.pkt_acked)
+					printf("(ACKed)\n");
+				else
+					printf("(waiting)\n");
+				
+				aux = aux->next;
+			}
+		}
+		
 		verify_acks(sockfd, pkt_list);
 
-		// Verifica se o pacote já foi reconhecido, possuiu um ACK
-		// Avança janela
 		while (snd_base < _snd_seqnum && 
 			pkt_list->head->packet->header.pkt_acked) {
-			
-			aux = pkt_list->head;
 
+			aux = pkt_list->head;
 			pkt_list->head = pkt_list->head->next;
+			
+			if (DEBUG)
+				printf("Free packet %d\n", aux->packet->header.pkt_seq_num);
+			
+			free(aux);
 			pkt_list->size--;
 
 			snd_base++;
 			packets_sent++;
+			windows_size++;
 
-			free(aux->packet);
-			free(aux);
-			
-			printf("\nWindow advanced: base=%d, next=%d\n", snd_base, _snd_seqnum);
+			if (DEBUG)
+				printf("\nWindow advanced: base=%d, next:%d\n", snd_base, _snd_seqnum);
 		}
-
-		// Verifica se houve timeout
-		struct timeval current_time;	
-
-		aux = pkt_list->head;
-		while (aux != NULL) {
-			gettimeofday(&current_time, NULL);
-
-			packet *current_pkt = aux->packet;
-			if (current_pkt != NULL && !current_pkt->header.pkt_acked) {
-
-				// Verifica se houve timeout
-				if (timeval_compare(&current_pkt->header.pkt_time, &current_time, 0) > 0) {
-
-					printf("\nTimeout for packet %d.\n", current_pkt->header.pkt_seq_num);
-					
-					if(DEBUG){
-						double current_time_ts = current_time.tv_sec + current_time.tv_usec/1e6;
-						double current_pkt_ts = current_pkt->header.pkt_time.tv_sec + current_pkt->header.pkt_time.tv_usec/1e6;
-						double diff_time_ts = current_time_ts - current_pkt_ts;
-
-						printf("	Current time: %f, ", current_time_ts);
-						format_timestamp(current_time_ts);
-						printf("	Packet time: %f, ", current_pkt_ts);
-						format_timestamp(current_pkt_ts);
-						printf("	Diff time: %f, ", diff_time_ts);
-						format_timestamp(diff_time_ts);
-					}
-
-					// Reenvia o pacote
-					ns = sendto(sockfd, current_pkt, current_pkt->header.pkt_size, 0,
-							(struct sockaddr *)dest, sizeof(struct sockaddr_in));
-					
-					if (ns < 0) {
-						handle_error("rdt_send: sendto(PKT_DATA) resend:");
-					}
-					
-					// Atualiza o timeout
-					current_pkt->header.pkt_time = current_time;
-
-					windows_size = BEGIN_WINDOW_SIZE;
-				}
-				else {
-					if(DEBUG){
-						printf("\nNo timeout for packet %d.\n", current_pkt->header.pkt_seq_num);
-						printf("  Current time: %ld.%06ld\n", current_time.tv_sec, current_time.tv_usec);
-						printf("  Packet time: %ld.%06ld\n", current_pkt->header.pkt_time.tv_sec, current_pkt->header.pkt_time.tv_usec);
-					}
-				}
-			}
-
-			aux = aux->next;
-		}
-
-		windows_size++;
-	}
+	}	
 
 	return buf_len;
 }
