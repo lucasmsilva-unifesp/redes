@@ -16,6 +16,8 @@ struct timeval timeOutInterval = {0, 500000};
 hseq_t _snd_seqnum = 0;
 hseq_t _rcv_seqnum = 0;
 
+int windows_size = BEGIN_WINDOW_SIZE;
+
 packet *recv_window[WINDOW_SIZE];
 
 void set_window() {
@@ -24,7 +26,7 @@ void set_window() {
     }
 }
 
-static void verify_acks(int sockfd, packet** sliding_window) {
+static void verify_acks(int sockfd, packet_list *pkt_list) {
 	// Verifica ACKs e timeouts
 	fd_set readfds;
 	struct timeval tv;
@@ -62,7 +64,15 @@ static void verify_acks(int sockfd, packet** sliding_window) {
 			// Encontra o pacote na janela e marca como confirmado
 			int ack_seq = ack_pkt.header.pkt_seq_num;
 			if (ack_seq >= snd_base && ack_seq < _snd_seqnum) {
-				sliding_window[ack_seq % WINDOW_SIZE]->header.pkt_acked = 1;
+				packet_item *aux;
+				aux = pkt_list->head;
+
+				while (aux->packet->header.pkt_seq_num != ack_seq) {
+					aux = aux->next;
+				}
+
+				aux->packet->header.pkt_acked = 1;
+
 				printf("Marked packet %d as ACKed\n", ack_seq);
 				
 				// Atualiza estimativas de RTT se necessário
@@ -77,6 +87,22 @@ static void verify_acks(int sockfd, packet** sliding_window) {
 			}
 		} else {
 			printf("Received corrupted ACK\n");
+
+			windows_size = BEGIN_WINDOW_SIZE;
+			_snd_seqnum = snd_base;
+
+			packet_item *aux, *aux2;
+			aux = pkt_list->head->next;
+
+			while (aux != NULL) {
+				aux2 = aux->next;
+				free(aux->packet);
+				free(aux);
+				aux = aux2;
+			}
+
+			printf("Resetting window size to %d\n", windows_size);
+
 		}
 	}
 }
@@ -117,26 +143,40 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	packet *packets = chunks.packets;
 	int total_packets = chunks.total_packets;
 	
-	packet *sliding_window[WINDOW_SIZE];
-	for (int i = 0; i < WINDOW_SIZE; i++) {
-		sliding_window[i] = NULL;
-	}
+	packet_list *pkt_list = (packet_list *)malloc(sizeof(packet_list));
+	pkt_list->head = (packet_item *)malloc(sizeof(packet_item));
+	pkt_list->head->packet = &packets[_snd_seqnum];
+	pkt_list->head->seq_num = _snd_seqnum;
+	pkt_list->head->next = NULL;
+	pkt_list->size = 1;
+
+	_snd_seqnum++;
+
+	packet_item *aux;
 
 	while (packets_sent < total_packets) {
 
 		// Envia pacotes enquanto houver espaço na janela
 		while (_snd_seqnum < total_packets && 
-           _snd_seqnum < snd_base + WINDOW_SIZE) {
+           _snd_seqnum < snd_base + windows_size) {
 
 			printf("\nSending data_pkt: %d (window position: %d)\n", 
                _snd_seqnum, _snd_seqnum % WINDOW_SIZE);
         
-			sliding_window[_snd_seqnum % WINDOW_SIZE] = &packets[_snd_seqnum];
+			aux = pkt_list->head;
+			while (aux->next != NULL) {
+				aux = aux->next;
+			}
+
+			aux->next = (packet_item *)malloc(sizeof(packet_item));
+			aux->next->packet = &packets[_snd_seqnum];
+			aux->next->seq_num = _snd_seqnum;
+			aux->next->next = NULL;
+			pkt_list->size++;
 			
-			ns = sendto(sockfd, sliding_window[_snd_seqnum % WINDOW_SIZE], 
-					sliding_window[_snd_seqnum % WINDOW_SIZE]->header.pkt_size, 0,
+			ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
 					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
-			
+
 			if (ns < 0) {
 				handle_error("rdt_send: sendto(PKT_DATA):");
 			}
@@ -144,50 +184,58 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			// Apenas para verificar o status dos pacotes na janela
 			if(DEBUG){
 				printf("  Window status:\n");
-				for (int i = 0; i < WINDOW_SIZE; i++) {
-					if (sliding_window[i] != NULL) {
-						printf("  [%d]: seq=%d ", i, 
-							sliding_window[i]->header.pkt_seq_num);
-						if (sliding_window[i]->header.pkt_acked)
-							printf("(ACKed)\n");
-						else
-							printf("(waiting)\n");
-					} else {
-						printf("  [%d]: empty\n", i);
-					}
+
+				aux = pkt_list->head;
+				for (int i = 0; i < windows_size; i++) {
+					printf("  [%d]: seq=%d\n", i, aux->seq_num);
+					
+					if (aux->packet->header.pkt_acked)
+						printf("(ACKed)\n");
+					else
+						printf("(waiting)\n");
+					
+					aux = aux->next;
 				}
 			}
 			
 			_snd_seqnum++;
 		}
 
-		verify_acks(sockfd, sliding_window);
+		verify_acks(sockfd, pkt_list);
 
 		// Verifica se o pacote já foi reconhecido, possuiu um ACK
 		// Avança janela
 		while (snd_base < _snd_seqnum && 
-			sliding_window[snd_base % WINDOW_SIZE]->header.pkt_acked) {
+			pkt_list->head->packet->header.pkt_acked) {
+			
+			aux = pkt_list->head;
 
-			sliding_window[snd_base % WINDOW_SIZE] = NULL;
+			pkt_list->head = pkt_list->head->next;
+			pkt_list->size--;
+
 			snd_base++;
 			packets_sent++;
+
+			free(aux->packet);
+			free(aux);
 			
 			printf("\nWindow advanced: base=%d, next=%d\n", snd_base, _snd_seqnum);
 		}
 
 		// Verifica se houve timeout
 		struct timeval current_time;	
-		
-		for (int i = snd_base; i < _snd_seqnum; i++) {
-	    	gettimeofday(&current_time, NULL);
 
-			packet *current_pkt = sliding_window[i % WINDOW_SIZE];
+		aux = pkt_list->head;
+		while (aux != NULL) {
+			gettimeofday(&current_time, NULL);
+
+			packet *current_pkt = aux->packet;
 			if (current_pkt != NULL && !current_pkt->header.pkt_acked) {
 
 				// Verifica se houve timeout
 				if (timeval_compare(&current_pkt->header.pkt_time, &current_time, 0) > 0) {
 
-					printf("\nTimeout for packet %d.\n", i);
+					printf("\nTimeout for packet %d.\n", current_pkt->header.pkt_seq_num);
 					
 					if(DEBUG){
 						double current_time_ts = current_time.tv_sec + current_time.tv_usec/1e6;
@@ -212,17 +260,22 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 					
 					// Atualiza o timeout
 					current_pkt->header.pkt_time = current_time;
+
+					windows_size = BEGIN_WINDOW_SIZE;
 				}
 				else {
 					if(DEBUG){
-						printf("\nNo timeout for packet %d.\n", i);
+						printf("\nNo timeout for packet %d.\n", current_pkt->header.pkt_seq_num);
 						printf("  Current time: %ld.%06ld\n", current_time.tv_sec, current_time.tv_usec);
 						printf("  Packet time: %ld.%06ld\n", current_pkt->header.pkt_time.tv_sec, current_pkt->header.pkt_time.tv_usec);
 					}
 				}
-				
 			}
+
+			aux = aux->next;
 		}
+
+		windows_size++;
 	}
 
 	return buf_len;

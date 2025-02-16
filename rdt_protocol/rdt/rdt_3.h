@@ -22,6 +22,7 @@
 #define ALPHA 0.125
 #define BETA 0.25
 
+#define BEGIN_WINDOW_SIZE 1
 #define WINDOW_SIZE 10
 
 typedef uint16_t hsize_t;
@@ -45,17 +46,28 @@ struct hdr {
 
 typedef struct hdr header;
 
-struct pkt {
+typedef struct pkt {
 	header header;
 	unsigned char payload[MAX_MSG_LEN];
-};
+} packet;
 
-typedef struct pkt packet;
+typedef struct item{
+	packet *packet;
+	int seq_num;
+	struct item *next;
+} packet_item;
+
+typedef struct list{
+	packet_item *head;
+	int size;
+} packet_list;
 
 typedef struct {
     packet *packets;
     int total_packets;
 } chunks_info;
+
+extern int windows_size;
 
 extern double estimatedRTT, devRTT;
 extern struct timeval timeOutInterval;
