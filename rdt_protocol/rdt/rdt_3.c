@@ -26,7 +26,7 @@ void set_window() {
     }
 }
 
-static void verify_acks(int sockfd, packet_list *pkt_list) {
+static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 	// Verifica ACKs e timeouts
 	fd_set readfds;
 	struct timeval tv;
@@ -99,6 +99,8 @@ static void verify_acks(int sockfd, packet_list *pkt_list) {
 			aux = aux2;
 		}
 
+		*acks_received = 0;
+
 		pkt_list->size = 0;
 		
 		printf("Resetting window size to %d\n", windows_size);
@@ -137,6 +139,8 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	int ns;
 	chunks_info chunks;
 
+	int acks_received = 0;
+
 	chunks = divide_file_to_chunks(buf_len, buf);
 	packet *packets = chunks.packets;
 	int total_packets = chunks.total_packets;
@@ -160,12 +164,13 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				pkt_list->size = 1;
 
 				pkt_list->head->packet = &packets[_snd_seqnum];
+				pkt_list->head->packet->header.pkt_acked = FALSE;
 				pkt_list->head->seq_num = _snd_seqnum;
 
-				if ((rand() % 2)) {
+				if (rand() % 10) {
 					ns = sendto(sockfd, pkt_list->head->packet, pkt_list->head->packet->header.pkt_size , 0,
 						(struct sockaddr *)dest, sizeof(struct sockaddr_in));
-	
+
 					if (ns < 0) {
 						handle_error("rdt_send: sendto(PKT_DATA):");
 					}
@@ -178,14 +183,17 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				aux->next = (packet_item *)malloc(sizeof(packet_item));
 				aux->next->next = NULL;
 				aux->next->packet = &packets[_snd_seqnum];
+				aux->next->packet->header.pkt_acked = FALSE;
 				aux->next->seq_num = _snd_seqnum;
 				pkt_list->size++;
 
-				ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
-					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
+				if (rand() % 10) {
+					ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
+						(struct sockaddr *)dest, sizeof(struct sockaddr_in));
 
-				if (ns < 0) {
-					handle_error("rdt_send: sendto(PKT_DATA):");
+					if (ns < 0) {
+						handle_error("rdt_send: sendto(PKT_DATA):");
+					}
 				}
 			}
 
@@ -209,7 +217,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			}
 		}
 		
-		verify_acks(sockfd, pkt_list);
+		verify_acks(sockfd, pkt_list, &acks_received);
 
 		while (snd_base < _snd_seqnum && 
 			pkt_list->head->packet->header.pkt_acked) {
@@ -225,7 +233,10 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 
 			snd_base++;
 			packets_sent++;
-			windows_size++;
+			if (++acks_received >= pkt_list->size) {
+				windows_size++;
+				acks_received = 0;
+			}
 
 			if (DEBUG)
 				printf("\nWindow advanced: base=%d, next:%d\n", snd_base, _snd_seqnum);
