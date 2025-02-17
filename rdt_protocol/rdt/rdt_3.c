@@ -33,7 +33,6 @@ static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 	packet ack_pkt;
 	struct sockaddr_in ack_addr;
 	int addr_len = sizeof(ack_addr);
-	printf("Ready\n");
 
 	// Configura o select
 	FD_ZERO(&readfds);
@@ -74,7 +73,7 @@ static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 				gettimeofday(&current_time, NULL);
 				
 				double sampleRTT = (current_time.tv_sec + current_time.tv_usec / 1e6) - 
-				(ack_pkt.header.pkt_time.tv_sec - ack_pkt.header.pkt_time.tv_usec / 1e6);
+				(ack_pkt.header.pkt_time.tv_sec + ack_pkt.header.pkt_time.tv_usec / 1e6);
 				
 				timeout_interval(sampleRTT);
 
@@ -167,13 +166,11 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				pkt_list->head->packet->header.pkt_acked = FALSE;
 				pkt_list->head->seq_num = _snd_seqnum;
 
-				if (rand() % 10) {
-					ns = sendto(sockfd, pkt_list->head->packet, pkt_list->head->packet->header.pkt_size , 0,
-						(struct sockaddr *)dest, sizeof(struct sockaddr_in));
+				ns = sendto(sockfd, pkt_list->head->packet, pkt_list->head->packet->header.pkt_size , 0,
+					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
 
-					if (ns < 0) {
-						handle_error("rdt_send: sendto(PKT_DATA):");
-					}
+				if (ns < 0) {
+					handle_error("rdt_send: sendto(PKT_DATA):");
 				}
 			} else {
 				aux = pkt_list->head;
@@ -187,13 +184,11 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				aux->next->seq_num = _snd_seqnum;
 				pkt_list->size++;
 
-				if (rand() % 10) {
-					ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
-						(struct sockaddr *)dest, sizeof(struct sockaddr_in));
+				ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
+					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
 
-					if (ns < 0) {
-						handle_error("rdt_send: sendto(PKT_DATA):");
-					}
+				if (ns < 0) {
+					handle_error("rdt_send: sendto(PKT_DATA):");
 				}
 			}
 
@@ -233,6 +228,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 
 			snd_base++;
 			packets_sent++;
+			// sequencial acks / janela
 			if (++acks_received >= pkt_list->size) {
 				windows_size++;
 				acks_received = 0;
@@ -293,6 +289,7 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
             continue;
         }
 
+		// retorna o tamanho do pacote
         if (recvfrom(sockfd, &data, sizeof(packet), 0, 
                      (struct sockaddr*)src, (socklen_t *)&addrLen) < 0) {
             handle_error("recvfrom in rdt_recv");
@@ -323,7 +320,7 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
             
 			// Caso em que não existe conteúdo no atual índice da janela. Acontece no início e a cada transmissão sucedida, já que após receber o pacote.
             if (recv_window[window_index] == NULL) {
-                recv_window[window_index] = malloc(sizeof(packet));
+                recv_window[window_index] = malloc(sizeof(packet)); // alocar só o tamanho do pacote recebido
                 memcpy(recv_window[window_index], &data, sizeof(packet));
 
                 make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time);
