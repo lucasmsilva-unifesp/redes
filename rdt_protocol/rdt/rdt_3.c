@@ -184,6 +184,8 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				aux->next->seq_num = _snd_seqnum;
 				pkt_list->size++;
 
+				aux = aux->next;
+
 				ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
 					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
 
