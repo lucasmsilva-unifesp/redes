@@ -248,7 +248,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 	int total_received = 0;
 
     while (1) {
-        fd_set readfds;
         packet data, ack;
         int addrLen = sizeof(struct sockaddr_in);
 
@@ -276,20 +275,6 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 			_rcv_seqnum++;
 			break;
 		}
-
-        FD_ZERO(&readfds);
-        FD_SET(sockfd, &readfds);
-
-        // Wait for packet or timeout
-        int ready = select(sockfd + 1, &readfds, NULL, NULL, &timeOutInterval);
-
-        if (ready < 0) {
-            handle_error("select error in rdt_recv");
-        }
-
-        if (ready == 0) {
-            continue;
-        }
 
 		// retorna o tamanho do pacote
         if (recvfrom(sockfd, &data, sizeof(packet), 0, 
