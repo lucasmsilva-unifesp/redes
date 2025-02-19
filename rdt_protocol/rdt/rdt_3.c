@@ -154,8 +154,8 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	while (packets_sent < total_packets) {
 		while (_snd_seqnum < snd_base + windows_size &&
 			_snd_seqnum < total_packets) {
-			printf("\nSending data_pkt: %d (window position: %d)\n", 
-				_snd_seqnum, _snd_seqnum % windows_size);
+			printf("\nSending data_pkt: %d (window position: %d/%d)\n",
+				_snd_seqnum, pkt_list->size+1, windows_size);
 
 			if (pkt_list->size == 0) {
 				pkt_list->head = (packet_item *)malloc(sizeof(packet_item));
@@ -199,7 +199,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			printf("  Window status:\n");
 
 			aux = pkt_list->head;
-			int i = 0;
+			int i = 1;
 			while (aux != NULL) {
 				printf("  [%d]: seq=%d ", i++, aux->seq_num);
 				
@@ -224,8 +224,7 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				printf("Free packet %d\n", aux->packet->header.pkt_seq_num);
 			
 			free(aux);
-			pkt_list->size--;
-
+			
 			snd_base++;
 			packets_sent++;
 			// sequencial acks / janela
@@ -233,7 +232,8 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 				windows_size++;
 				acks_received = 0;
 			}
-
+			
+			pkt_list->size--;
 			if (DEBUG)
 				printf("\nWindow advanced: base=%d, next:%d\n", snd_base, _snd_seqnum);
 		}
