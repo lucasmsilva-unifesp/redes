@@ -12,13 +12,6 @@ int is_corrupted(packet *packetReceive);
 int has_ackseq(packet *packet, hseq_t seqnum);
 int has_dataseqnum(packet *packet, hseq_t seqNum);
 
-void check_timeouts(int sockfd, struct sockaddr_in *dest);
-void process_ack(packet ack_pkt);
-
-void format_timestamp(double timestamp);
-
-int timeval_compare(struct timeval *pkt_time, struct timeval *current_time, int print);
-
 chunks_info divide_file_to_chunks(int buf_len, void *buf);
 
 #endif

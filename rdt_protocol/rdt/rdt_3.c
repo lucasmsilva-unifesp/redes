@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// Variáveis globais
 hseq_t snd_base = 0;
 hseq_t rcv_base = 0;
 hseq_t next_seq_num = 0;
@@ -20,12 +21,22 @@ int windows_size = BEGIN_WINDOW_SIZE;
 
 packet *recv_window[WINDOW_SIZE];
 
+/**
+ * @brief Inicializa o buffer de recebimento com ponteiros nulos
+ */
 void set_window() {
 	for (int i = 0; i < WINDOW_SIZE; i++) {
         recv_window[i] = NULL;
     }
 }
 
+/**
+ * @brief Verifica se há ACKs para pacotes na janela e verifica se houve timeout
+ * 
+ * @param sockfd descritor do socket
+ * @param pkt_list lista ligada com os pacotes enviados
+ * @param acks_received ponteiro para o contador de ACKs recebidos
+ */
 static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 	// Verifica ACKs e timeouts
 	fd_set readfds;
@@ -45,6 +56,7 @@ static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 	// Espera por ACKs ou timeout
 	int ready = select(sockfd + 1, &readfds, NULL, NULL, &tv);
 
+	// Verifica se houve algum erro
 	if (ready < 0) {
 		handle_error("select error");
 	} else if (ready > 0) {
@@ -59,14 +71,18 @@ static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 		if (DEBUG)
 			printf("\nReceived ACK for packet: %d\n", ack_pkt.header.pkt_seq_num);
 		
+		// Verifica se o ACK foi corrompido
 		if (!is_corrupted(&ack_pkt)) {
 			int ack_seq_num = ack_pkt.header.pkt_seq_num;
+			// Verifica se o ACK pertence aos pacotes na janela
 			if (ack_seq_num >= snd_base && ack_seq_num < _snd_seqnum) {
 				packet_item *aux = pkt_list->head;
-				while (aux->packet->header.pkt_seq_num != ack_seq_num) {
+
+				// Encontra o pacote correspondente
+				while (!has_dataseqnum(aux->packet, ack_seq_num))
 					aux = aux->next;
-				}
 				
+				// Marca o pacote como acked
 				aux->packet->header.pkt_acked = TRUE;
 
 				struct timeval current_time;
@@ -75,6 +91,7 @@ static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 				double sampleRTT = (current_time.tv_sec + current_time.tv_usec / 1e6) - 
 				(ack_pkt.header.pkt_time.tv_sec + ack_pkt.header.pkt_time.tv_usec / 1e6);
 				
+				// Atualiza o RTT
 				timeout_interval(sampleRTT);
 
 				if (DEBUG)
@@ -87,25 +104,39 @@ static void verify_acks(int sockfd, packet_list *pkt_list, int *acks_received) {
 		if (DEBUG)
 			printf("Timeout for packet: %d\n", pkt_list->head->packet->header.pkt_seq_num);
 
+		// Volta para o tamanho inicial da janela
 		windows_size = BEGIN_WINDOW_SIZE;
 		_snd_seqnum = snd_base;
 
 		packet_item *aux = pkt_list->head, *aux2;
 
+		// Libera os itens de pacote na janela
 		while (aux != NULL) {
 			aux2 = aux->next;
 			free(aux);
 			aux = aux2;
 		}
 
+		// Reseta os contadores
 		*acks_received = 0;
-
 		pkt_list->size = 0;
 		
-		printf("Resetting window size to %d\n", windows_size);
+		if (DEBUG)
+			printf("Resetting window size to %d\n", windows_size);
 	}
 }
 
+/**
+ * @brief Cria um pacote
+ * 
+ * @param packet ponteiro para o pacote a ser criado
+ * @param type tipo de pacote (PKT_DATA ou PKT_ACK)
+ * @param seqNum número de sequência do pacote
+ * @param msg dados a serem enviados (ou NULL para um pacote de ACK)
+ * @param msg_len tamanho dos dados a serem enviados
+ * @param time tempo de envio do pacote (ou NULL para usar o tempo atual em caso de pacote de dados)
+ * @return 1 se o pacote for criado com sucesso, -1 caso contrário
+ */
 int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_len, htime_t * time) {
 	struct timeval time_start;
 
@@ -134,69 +165,83 @@ int make_pkt(packet *packet, PacketType type, hseq_t seqNum, void *msg, int msg_
 	return SUCCESS;
 }
 
+/**
+ * @brief Função para enviar dados via RDT 3.0 com janela dinâmica
+ * 
+ * Esta função divide o buffer em chunks e envia cada chunk como um pacote RDT 3.0.
+ * Ela também cuida de controlar o fluxo de dados e recebimento de ACKs.
+ * 
+ * @param sockfd descritor do socket
+ * @param buf buffer com os dados a serem enviados
+ * @param buf_len tamanho do buffer
+ * @param dest endere o do destinat rio
+ * @return int tamanho dos dados enviados
+ */
 int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	int ns;
 	chunks_info chunks;
 
+	// Contador de ACKs recebidos
 	int acks_received = 0;
 
+	// Divide o buffer em chunks
 	chunks = divide_file_to_chunks(buf_len, buf);
 	packet *packets = chunks.packets;
 	int total_packets = chunks.total_packets;
 	
+	// Cria uma lista ligada para armazenar os pacotes enviados 
 	packet_list *pkt_list = (packet_list *)malloc(sizeof(packet_list));
-	pkt_list->head = (packet_item *)malloc(sizeof(packet_item));
-	pkt_list->head->next = NULL;
+	pkt_list->head = NULL;
 	pkt_list->size = 0;
 
 	packet_item *aux;
 
+	// Envia os pacotes criados
 	while (packets_sent < total_packets) {
+		// Envia os pacotes da janela 
 		while (_snd_seqnum < snd_base + windows_size &&
 			_snd_seqnum < total_packets) {
 			printf("\nSending data_pkt: %d (window position: %d/%d)\n",
 				_snd_seqnum, pkt_list->size+1, windows_size);
 
+			// Verifica se a lista está vazia
 			if (pkt_list->size == 0) {
+				// Cria o primeiro pacote da lista
 				pkt_list->head = (packet_item *)malloc(sizeof(packet_item));
 				pkt_list->head->next = NULL;
-				pkt_list->size = 1;
 
-				pkt_list->head->packet = &packets[_snd_seqnum];
-				pkt_list->head->packet->header.pkt_acked = FALSE;
-				pkt_list->head->seq_num = _snd_seqnum;
-
-				ns = sendto(sockfd, pkt_list->head->packet, pkt_list->head->packet->header.pkt_size , 0,
-					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
-
-				if (ns < 0) {
-					handle_error("rdt_send: sendto(PKT_DATA):");
-				}
+				aux = pkt_list->head;
 			} else {
+				// Move para o final da lista
 				aux = pkt_list->head;
 				while (aux->next != NULL)	{
 					aux = aux->next;
 				}
+
+				// Adiciona um novo pacote no final da lista
 				aux->next = (packet_item *)malloc(sizeof(packet_item));
-				aux->next->next = NULL;
-				aux->next->packet = &packets[_snd_seqnum];
-				aux->next->packet->header.pkt_acked = FALSE;
-				aux->next->seq_num = _snd_seqnum;
-				pkt_list->size++;
-
 				aux = aux->next;
+			}
+			
+			aux->next = NULL;
+			aux->packet = &packets[_snd_seqnum];
+			aux->packet->header.pkt_acked = FALSE;
+			aux->seq_num = _snd_seqnum;
+			pkt_list->size++;
+			
+			// Envia o pacote
+			ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
+				(struct sockaddr *)dest, sizeof(struct sockaddr_in));
 
-				ns = sendto(sockfd, aux->packet, aux->packet->header.pkt_size, 0,
-					(struct sockaddr *)dest, sizeof(struct sockaddr_in));
-
-				if (ns < 0) {
-					handle_error("rdt_send: sendto(PKT_DATA):");
-				}
+			if (ns < 0) {
+				handle_error("rdt_send: sendto(PKT_DATA):");
 			}
 
+			// Incrementa o contador sequencial
 			_snd_seqnum++;
 		}
 		
+		// Mostra o status da janela 
 		if(DEBUG){
 			printf("  Window status:\n");
 
@@ -214,11 +259,13 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			}
 		}
 		
+		// Verifica se há algum pacote pronto para enviar
 		verify_acks(sockfd, pkt_list, &acks_received);
 
 		while (snd_base < _snd_seqnum && 
 			pkt_list->head->packet->header.pkt_acked) {
 
+			// Remove o primeiro pacote da lista com ACK
 			aux = pkt_list->head;
 			pkt_list->head = pkt_list->head->next;
 			
@@ -227,15 +274,18 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 			
 			free(aux);
 			
+			pkt_list->size--;
+
 			snd_base++;
 			packets_sent++;
-			// sequencial acks / janela
-			if (++acks_received >= pkt_list->size) {
+			acks_received++;
+			
+			// Incrementa a janela se o numero de acks for igual ao tamanho da lista
+			if (acks_received >= windows_size) {
 				windows_size++;
 				acks_received = 0;
 			}
 			
-			pkt_list->size--;
 			if (DEBUG)
 				printf("\nWindow advanced: base=%d, next:%d\n", snd_base, _snd_seqnum);
 		}
@@ -244,6 +294,15 @@ int rdt_send(int sockfd, void *buf, int buf_len, struct sockaddr_in *dest) {
 	return buf_len;
 }
 
+/**
+ * @brief Função para receber dados via RDT 3.0
+ * 
+ * @param sockfd descritor do socket
+ * @param buf buffer para armazenar os dados recebidos
+ * @param buf_len tamanho do buffer
+ * @param src endere o do remetente
+ * @return int tamanho dos dados recebidos
+ */
 int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 	int total_received = 0;
 
@@ -251,45 +310,53 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
         packet data, ack;
         int addrLen = sizeof(struct sockaddr_in);
 
-		// Loop para verificar o caso em que há um conteúdo no buff de recebimento.
-		if (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
-			int msg_size = recv_window[_rcv_seqnum % WINDOW_SIZE]->header.pkt_size - sizeof(header);
-			
-			if (msg_size > buf_len) {
-				handle_error("rdt_recv: buffer receive overflow");
-			}
+        // Verifica se o buffer de recebimento está pronto para uso
+        if (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
+            int msg_size = recv_window[_rcv_seqnum % WINDOW_SIZE]->header.pkt_size - sizeof(header);
+            
+            if (msg_size > buf_len) {
+                handle_error("rdt_recv: buffer receive overflow");
+            }
 
-			memcpy(buf, 
-					recv_window[_rcv_seqnum % WINDOW_SIZE]->payload, 
-					msg_size);
+            // Copia os dados do buffer de recebimento para o buffer do usuário
+            memcpy(buf, 
+                   recv_window[_rcv_seqnum % WINDOW_SIZE]->payload, 
+                   msg_size);
 
-			total_received = msg_size;
-			
-			free(recv_window[_rcv_seqnum % WINDOW_SIZE]);
-			recv_window[_rcv_seqnum % WINDOW_SIZE] = NULL;
+            total_received = msg_size;
+            
+            // Libera o buffer de recebimento
+            free(recv_window[_rcv_seqnum % WINDOW_SIZE]);
+            recv_window[_rcv_seqnum % WINDOW_SIZE] = NULL;
 
 			if (DEBUG) {
 				printf("rdt_recv: Buffer filled with size=%d and index=%d\n", msg_size, _rcv_seqnum % WINDOW_SIZE);
 			}
 
-			_rcv_seqnum++;
-			break;
-		}
+            // Incrementa o contador sequencial
+            _rcv_seqnum++;
+            break;
+        }
 
-		// retorna o tamanho do pacote
+        // Recebe o pacote
         if (recvfrom(sockfd, &data, sizeof(packet), 0, 
                      (struct sockaddr*)src, (socklen_t *)&addrLen) < 0) {
             handle_error("recvfrom in rdt_recv");
         }
 
+        // Verifica se o pacote est  corrompido
         if (is_corrupted(&data)) {
             continue;
         }
 
-		if (data.header.pkt_seq_num < _rcv_seqnum) {
+        // Verifica se o pacote recebido é um pacote duplicado
+        if (data.header.pkt_seq_num < _rcv_seqnum) {
+            // Cria um pacote de ACK com o mesmo numero de sequencia
             make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time);
-            sendto(sockfd, &ack, ack.header.pkt_size, 0, 
-                   (struct sockaddr*)src, addrLen);
+            if (sendto(sockfd, &ack, ack.header.pkt_size, 0, 
+                   (struct sockaddr*)src, addrLen)) {
+				handle_error("rdt_send: sendto(PKT_DATA):");
+			}
 
             if (DEBUG) {
                 printf("rdt_recv: Duplicate ACK for packet %d (current base: %d)\n", 
@@ -299,17 +366,19 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
             continue;
         }
 
-		// Verifica se o pkt está dentro da janela de recebimento
+        // Verifica se o pacote está dentro da janela de recebimento
         if (data.header.pkt_seq_num >= _rcv_seqnum && 
             data.header.pkt_seq_num < _rcv_seqnum + WINDOW_SIZE) {
             
             int window_index = data.header.pkt_seq_num % WINDOW_SIZE;
             
-			// Caso em que não existe conteúdo no atual índice da janela. Acontece no início e a cada transmissão sucedida, já que após receber o pacote.
+            // Caso em que não existe conteudo no atual índice da janela
             if (recv_window[window_index] == NULL) {
-                recv_window[window_index] = malloc(sizeof(packet)); // alocar só o tamanho do pacote recebido
+				// Copia o conteudo do pacote para o buffer de recebimento
+                recv_window[window_index] = malloc(sizeof(packet));
                 memcpy(recv_window[window_index], &data, sizeof(packet));
 
+                // Cria um pacote de ACK
                 make_pkt(&ack, PKT_ACK, data.header.pkt_seq_num, NULL, 0, &data.header.pkt_time);
                 sendto(sockfd, &ack, ack.header.pkt_size, 0, 
                        (struct sockaddr*)src, addrLen);
@@ -320,7 +389,7 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 				}
             }
 
-			// Loop para verificar o caso em que há um conteúdo no buff de recebimento.
+            // Verifica se o buffer de recebimento está pronto para uso
             if (recv_window[_rcv_seqnum % WINDOW_SIZE] != NULL) {
                 int msg_size = recv_window[_rcv_seqnum % WINDOW_SIZE]->header.pkt_size - sizeof(header);
                 
@@ -328,12 +397,14 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
                     handle_error("rdt_recv: buffer receive overflow");
                 }
 
+                // Copia os dados do buffer de recebimento para o buffer do usuário
                 memcpy(buf, 
                        recv_window[_rcv_seqnum % WINDOW_SIZE]->payload, 
                        msg_size);
 
 				total_received = msg_size;
                 
+                // Libera o buffer de recebimento
                 free(recv_window[_rcv_seqnum % WINDOW_SIZE]);
                 recv_window[_rcv_seqnum % WINDOW_SIZE] = NULL;
 
@@ -341,11 +412,12 @@ int rdt_recv(int sockfd, void *buf, int buf_len, struct sockaddr_in *src) {
 					printf("rdt_recv: Buffer filled with size=%d and index=%d\n", msg_size, _rcv_seqnum % WINDOW_SIZE);
 				}
 
+                // Incrementa o contador sequencial
                 _rcv_seqnum++;
             }
         }
 
-		break;
+        break;
     }
 
     return total_received;

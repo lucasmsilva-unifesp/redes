@@ -35,16 +35,14 @@ typedef enum {
     PKT_DATA = 1
 } PacketType;
 
-struct hdr {
+typedef struct hdr {
 	hseq_t  pkt_seq_num;
 	hsize_t pkt_size;
 	PacketType pkt_type;
 	hcsum_t pkt_checksum;
 	htime_t pkt_time;
     int pkt_acked;
-};
-
-typedef struct hdr header;
+} header;
 
 typedef struct pkt {
 	header header;
